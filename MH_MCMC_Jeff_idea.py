@@ -1,7 +1,7 @@
 import healpy as hp
 import numpy as np
 from matplotlib import pyplot as plt
-import CG_functions_noCG as CG
+import CG_functions as CG
 import time
 import sys
 import camber as cb
