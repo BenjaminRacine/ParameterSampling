@@ -2,7 +2,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 import camber as cb
 import healpy as hp
-import CG_functions_noCG as CG
+import CG_functions as CG
 import MH_module as MH
 
 
