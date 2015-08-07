@@ -8,7 +8,7 @@ import CG_functions as CG
 import MH_module as MH
 import PS2param_module as PS2P # defines w() Pi() priors etc.
 import sys
-
+generate_new_data=0
 try:
     from local_paths import *
 except:
@@ -58,10 +58,10 @@ if generate_new_data==1:
     dlm = hp.almxfl(alm,bl[:lmax+1])
     nlm = hp.synalm(nl[:lmax+1])
     dlm = dlm+nlm
-
+    print "dataset generated"
 else:
     dlm =np.load("Dataset_planck2015_35009eminus4_whitenoise.npy")
-
+    print 'dataset read'
 # Could be used for asymetric proposal, but now only for first guess
 x_mean = np.array([0.02222,0.1197,0.078,3.089,0.9655,67.31])
 
