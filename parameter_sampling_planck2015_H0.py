@@ -44,10 +44,10 @@ dd['hubble'] = 67.31
 ########### Here we simulate the data set ############
 
 # White noise spectrum, (Commander level, so low)
-nl = 1.7504523623688016e-16*1e12 * np.ones(2500)
+nl = 2*1.7504523623688016e-16*1e12 * np.ones(2500)
 
 # Gaussian beam fwhm 5 arcmin 
-bl = CG.gaussian_beam(2500,5)
+bl = CG.gaussian_beam(2500,15)
 
 # Spectrum according to parameter defined above
 
