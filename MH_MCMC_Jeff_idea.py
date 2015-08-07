@@ -11,6 +11,7 @@ import Jeff_idea as JJi
 
 nside = 2048
 lmax=2200
+generate_new_data = 0
 
 try:
     from local_paths import *
@@ -57,15 +58,19 @@ nl = 1.7504523623688016e-16*1e12 * np.ones(2500) *2
 bl = CG.gaussian_beam(2500,15)
 
 # Spectrum according to parameter defined above
-Cl = cb.generate_spectrum(dd)
-lmax_temp = Cl.shape[0]-1
-alm = hp.synalm(Cl[:,1])
-dlm = hp.almxfl(alm,bl[:lmax_temp+1])
-nlm = hp.synalm(nl[:lmax_temp+1])
-dlm = dlm+nlm
+if generate_new_data==1:
+    Cl = cb.generate_spectrum(dd)
+    lmax_temp = Cl.shape[0]-1
+    alm = hp.synalm(Cl[:,1])
+    dlm = hp.almxfl(alm,bl[:lmax_temp+1])
+    nlm = hp.synalm(nl[:lmax_temp+1])
+    dlm = dlm+nlm
+    dlm_filt = CG.filter_alm(dlm,lmax+1)
+    print "dataset generated"
 
-dlm_filt = CG.filter_alm(dlm,lmax+1)
-print "dataset generated"
+else:
+    dlm =np.load("Dataset_planck2015_35009eminus4_whitenoise.npy")
+    print "dataset read"
 #################################################
 
 
