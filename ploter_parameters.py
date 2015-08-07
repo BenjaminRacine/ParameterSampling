@@ -177,7 +177,7 @@ def plot_like(guesses,like,flag,titles,which_par,save=0):
 
 
 
-def plot_chains(guesses,flag,titles,which_par,x_mean,Cov,save=0):
+def plot_chains(guesses,flag,chains,titles,which_par,x_mean,Cov,save=0):
     """
     Plots the chains for all parameters, and the priors
 
@@ -193,6 +193,7 @@ def plot_chains(guesses,flag,titles,which_par,x_mean,Cov,save=0):
     j=0
     for i in which_par:
         plt.figure()
+        plt.plot(chains[:,j],'b.',alpha = 0.5,label='MC chain')
         plt.plot(np.arange(niter)[flag==0],guesses[flag==0,j],'k.',alpha = 0.2,label='Rejected')
         plt.plot(np.arange(niter)[flag==1],guesses[flag==1,j],'g.',label="Accepted")
         plt.plot(np.arange(niter)[flag==2],guesses[flag==2,j],'r.',label='Lucky accepted')
@@ -256,12 +257,25 @@ def plot_all(chain,titles,which_par,x_mean,Cov,burnin_cut=50,save=0,plot_int = 0
     Cls=Cls[flag!=-2]
     like=like[flag!=-2]
     flag=flag[flag!=-2]
-    plot_autocorr(guesses,flag,titles,which_par,burnin_cut,save)
-    plot_chains(guesses,flag,titles,which_par,x_mean,Cov,save)
+    chains = real_chain(guesses,flag)
+    plot_autocorr(chains,np.ones(len(flag)),titles,which_par,burnin_cut,save)
+    plot_chains(guesses,flag,chains,titles,which_par,x_mean,Cov,save)
     plt.figure()
-    Triangle_plot_Cov_dat(guesses,flag,x_mean,Cov,titles,which_par)
+    Triangle_plot_Cov_dat(chains,np.ones(len(flag)),x_mean,Cov,titles,which_par)
     if save!=0:
         plt.savefig("plots/Triangle_%s.png"%save)
     plot_like(guesses,like,flag,titles,which_par,save)
     plot_like_profile(guesses,like,flag,titles,which_par,save)
     
+def real_chain(guesses,flag):
+    """
+    fills the guesses where rejected with previous accepted value
+    """
+    guesse_new = guesses.copy()
+    accep_idx = np.where(flag>0)[0]
+    for i in range(len(accep_idx)-1):
+        for j in range(accep_idx[i],accep_idx[i+1]):
+            guesse_new[j] = guesse_new[accep_idx[i]]
+    for k in range(accep_idx[-1],len(guesses)):
+        guesse_new[k] = guesse_new[accep_idx[-1]]
+    return guesse_new
