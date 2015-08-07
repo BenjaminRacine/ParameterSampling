@@ -139,7 +139,7 @@ def MCMC_log(guess,functional_form,proposal,proposal_fun,niter,priors_func,*arg)
             print "error: %s on line %s"%(sys.exc_info()[0],sys.exc_info()[-1].tb_lineno)
             flag.append(-2)
             like.append(-2)
-            Cls.append(np.zeros(len(Cl_old)))
+            Cls.append(np.zeros(len(Cl)))
             #plt.draw()
     print "%d fails"%failed
     return guesses,np.array(flag),np.array(like),Cls
