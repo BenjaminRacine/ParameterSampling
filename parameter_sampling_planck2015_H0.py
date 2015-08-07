@@ -50,14 +50,17 @@ nl = 1.7504523623688016e-16*1e12 * np.ones(2500)
 bl = CG.gaussian_beam(2500,5)
 
 # Spectrum according to parameter defined above
-Cl = cb.generate_spectrum(dd)
-lmax = Cl.shape[0]-1
-alm = hp.synalm(Cl[:,1])
-dlm = hp.almxfl(alm,bl[:lmax+1])
-nlm = hp.synalm(nl[:lmax+1])
-dlm = dlm+nlm
 
+if generate_new_data==1:
+    Cl = cb.generate_spectrum(dd)
+    lmax = Cl.shape[0]-1
+    alm = hp.synalm(Cl[:,1])
+    dlm = hp.almxfl(alm,bl[:lmax+1])
+    nlm = hp.synalm(nl[:lmax+1])
+    dlm = dlm+nlm
 
+else:
+    dlm =np.load("Dataset_planck2015_35009eminus4_whitenoise.npy")
 
 # Could be used for asymetric proposal, but now only for first guess
 x_mean = np.array([0.02222,0.1197,0.078,3.089,0.9655,67.31])
