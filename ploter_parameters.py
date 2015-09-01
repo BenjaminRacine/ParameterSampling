@@ -110,7 +110,7 @@ def Triangle_plot_Cov_dat(guesses,flag,x_mean,Cov,titles,which_par,**kwargs):
         #sUtahtop
         ax_temp.plot(x1,np.exp(-0.5*(x1-x_mean[i])**2/Cov[i,i])/np.sqrt(2*np.pi*Cov[i,i]),**kwargs)
         ax_temp.hist(guesses[:,i][flag>0],np.sqrt(sum(flag>0)),histtype="step",normed=True)
-        ax_temp.set_title(titles[which_par[i]],y=1.08)
+        ax_temp.set_title(titles[which_par[i]],y=1.2)
         ax_temp.set_xlim(x1.min(),x1.max())
         for j in range(i+1,nb_param):
             covar = np.cov([guesses[:,i],guesses[:,j]])
