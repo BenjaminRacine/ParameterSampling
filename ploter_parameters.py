@@ -116,6 +116,7 @@ def Triangle_plot_Cov_dat(guesses,flag,x_mean,Cov,titles,which_par,**kwargs):
             covar = np.cov([guesses[:,i],guesses[:,j]])
             means = [guesses[:,i].mean(),guesses[:,j].mean()]
             rect_scatter = [left+(i)*width, left+(nb_param-j-1)*width, width, width]
+            y1 = np.linspace(x_mean[j]- 5*np.sqrt(Cov[j,j]),x_mean[j] + 5*np.sqrt(Cov[j,j]),200)
             ax_temp=plt.axes(rect_scatter)
             ell = plot_ellipse(Cov[[i,j],:][:,[i,j]],x_mean[[i,j]],1,plot=1,axe=ax_temp,fill=False)
             ell2 = plot_ellipse(covar,means,1,plot=1,axe=ax_temp,fill=False,color="y")
@@ -130,6 +131,7 @@ def Triangle_plot_Cov_dat(guesses,flag,x_mean,Cov,titles,which_par,**kwargs):
             ax_temp.yaxis.set_visible(False)
             axScatter.append(ax_temp)
             ax_temp.set_xlim(x1.min(),x1.max())
+            ax_temp.set_ylim(y1.min(),y1.max())
             pass
     return axScatter, axHistx
 
