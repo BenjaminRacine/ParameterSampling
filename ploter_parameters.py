@@ -22,7 +22,7 @@ def Triangle_plot_Cov(Cov,x_mean,**kwargs):
         axHistx.append(ax_temp)
         ax_temp.xaxis.tick_top()
         ax_temp.yaxis.set_visible(False)#tick_right()
-        ax_temp.locator_params(nbins=4)
+        ax_temp.locator_params(tight=True,nbins=4)
         x1 = np.linspace(x_mean[i]- 3*np.sqrt(Cov[i,i]),x_mean[i] + 3*np.sqrt(Cov[i,i]),200)
         #sUtahtop
         ax_temp.plot(x1,np.exp(-0.5*(x1-x_mean[i])**2/Cov[i,i])/np.sqrt(2*np.pi*Cov[i,i]),**kwargs)
@@ -93,7 +93,7 @@ def Triangle_plot_Cov_dat(guesses,flag,x_mean,Cov,titles,which_par,**kwargs):
     nullfmt   = NullFormatter()
     nb_param = guesses.shape[1]
     # definitions for the axes (left width and left_h is also bottom height and bottom_h)
-    left = 0.1/(nb_param)
+    left = 0.4/(nb_param)
     width = 0.9/(nb_param) 
     axHistx=[]
     axScatter=[]
@@ -105,12 +105,12 @@ def Triangle_plot_Cov_dat(guesses,flag,x_mean,Cov,titles,which_par,**kwargs):
         axHistx.append(ax_temp)
         ax_temp.xaxis.tick_top()
         ax_temp.yaxis.set_visible(False)#tick_right()
-        ax_temp.locator_params(nbins=4)
+        ax_temp.locator_params(tight=True,nbins=4)
         x1 = np.linspace(x_mean[i]- 5*np.sqrt(Cov[i,i]),x_mean[i] + 5*np.sqrt(Cov[i,i]),200)
         #sUtahtop
         ax_temp.plot(x1,np.exp(-0.5*(x1-x_mean[i])**2/Cov[i,i])/np.sqrt(2*np.pi*Cov[i,i]),**kwargs)
         ax_temp.hist(guesses[:,i][flag>0],np.sqrt(sum(flag>0)),histtype="step",normed=True)
-        ax_temp.set_title(titles[which_par[i]],y=1.2)
+        ax_temp.set_title(titles[which_par[i]],y=1.3)
         ax_temp.set_xlim(x1.min(),x1.max())
         for j in range(i+1,nb_param):
             covar = np.cov([guesses[:,i],guesses[:,j]])
@@ -126,13 +126,17 @@ def Triangle_plot_Cov_dat(guesses,flag,x_mean,Cov,titles,which_par,**kwargs):
             ax_temp.scatter(guesses[:,i][flag==2],guesses[:,j][flag==2],color="r",alpha=0.3)
 #            ax_temp.add_artist(ell)
             #ax_temp.plot(np.arange(12))
+            if i==0:
+                ax_temp.yaxis.set_ticks_position('left')
+            else:
+                ax_temp.yaxis.set_visible(False)
             ax_temp.xaxis.set_major_formatter(nullfmt)
             ax_temp.xaxis.set_visible(False)
-            ax_temp.yaxis.set_visible(False)
+            ax_temp.locator_params(tight=True,nbins=4)
             axScatter.append(ax_temp)
             ax_temp.set_xlim(x1.min(),x1.max())
             ax_temp.set_ylim(y1.min(),y1.max())
-            pass
+            #pass
     return axScatter, axHistx
 
 def plot_like_profile(guesses,like,flag,titles,which_par,save=0):
