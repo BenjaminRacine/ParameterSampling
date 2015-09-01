@@ -94,13 +94,14 @@ def Triangle_plot_Cov_dat(guesses,flag,x_mean,Cov,titles,which_par,**kwargs):
     nb_param = guesses.shape[1]
     # definitions for the axes (left width and left_h is also bottom height and bottom_h)
     left = 0.4/(nb_param)
+    bottom = 0.1/(nb_param)
     width = 0.9/(nb_param) 
     axHistx=[]
     axScatter=[]
     x_mean = x_mean[which_par]
     Cov = Cov[which_par,:][:,which_par]
     for i in range(nb_param):
-        rect_histx = [left+i*width, left+(nb_param-1-i)*width, width, width]
+        rect_histx = [left+i*width, bottom+(nb_param-1-i)*width, width, width]
         ax_temp = plt.axes(rect_histx)
         axHistx.append(ax_temp)
         ax_temp.xaxis.tick_top()
