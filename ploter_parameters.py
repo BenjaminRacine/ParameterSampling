@@ -77,7 +77,6 @@ def cor2cov(cov_diag,Correlation_matrix):
 
 
 
-
 def Triangle_plot_Cov_dat(guesses,flag,x_mean,Cov,titles,which_par,**kwargs):
     """
     Returns the triangle plots for a given chain, and compare to a given prediction
@@ -114,9 +113,13 @@ def Triangle_plot_Cov_dat(guesses,flag,x_mean,Cov,titles,which_par,**kwargs):
         ax_temp.set_title(titles[which_par[i]])
         ax_temp.set_xlim(x1.min(),x1.max())
         for j in range(i+1,nb_param):
+            covar = np.cov([guesses[:,i],guesses[:,j]])
+            means = [guesses[:,i].mean(),guesses[:,j].mean()]
             rect_scatter = [left+(i)*width, left+(nb_param-j-1)*width, width, width]
             ax_temp=plt.axes(rect_scatter)
             ell = plot_ellipse(Cov[[i,j],:][:,[i,j]],x_mean[[i,j]],1,plot=1,axe=ax_temp,fill=False)
+            ell2 = plot_ellipse(covar,means,1,plot=1,axe=ax_temp,fill=False,color="y")
+
             ax_temp.scatter(guesses[:,i][flag==0],guesses[:,j][flag==0],color="k",alpha=0.05)
             ax_temp.scatter(guesses[:,i][flag==1],guesses[:,j][flag==1],color="g",alpha=0.3)
             ax_temp.scatter(guesses[:,i][flag==2],guesses[:,j][flag==2],color="r",alpha=0.3)
@@ -129,7 +132,6 @@ def Triangle_plot_Cov_dat(guesses,flag,x_mean,Cov,titles,which_par,**kwargs):
             ax_temp.set_xlim(x1.min(),x1.max())
             pass
     return axScatter, axHistx
-
 
 def plot_like_profile(guesses,like,flag,titles,which_par,save=0):
     """
