@@ -241,9 +241,11 @@ def plot_autocorr(guesses,flag,titles,which_par,burnin_cut,max_plot,save=0):
         plt.title("%s autocorrelation"%titles[i])
         plt.ylabel(titles[i])
         plt.xlabel("Lag")
+        plt.hlines(0,0,max_plot,linestyle = '--',alpha=0.5)
         if save!=0:
             plt.savefig("plots/Autocorrelation_%s_%s_%d.png"%(save,str(which_par).replace(',','').replace('[','').replace(']','').replace(' ',''),j))#,SafeID))
         j+=1
+
             
 def plot_all(chain,titles,which_par,x_mean,Cov,burnin_cut=50,save=0,plot_int = 0):
     """
@@ -267,7 +269,7 @@ def plot_all(chain,titles,which_par,x_mean,Cov,burnin_cut=50,save=0,plot_int = 0
     like=like[flag!=-2]
     flag=flag[flag!=-2]
     chains = real_chain(guesses,flag)
-    plot_autocorr(chains,np.ones(len(flag)),titles,which_par,burnin_cut,500,save)
+    plot_autocorr(chains,np.ones(len(flag)),titles,which_par,burnin_cut,1000,save)
     plot_chains(guesses,flag,chains,titles,which_par,x_mean,Cov,save)
     plt.figure()
     Triangle_plot_Cov_dat(chains,np.ones(len(flag)),x_mean,Cov,titles,which_par)
