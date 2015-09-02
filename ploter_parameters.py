@@ -3,6 +3,22 @@ import numpy as np
 from matplotlib.ticker import NullFormatter
 from matplotlib.patches import Ellipse  
 import MH_module as MH
+from matplotlib.legend_handler import HandlerPatch
+
+
+
+def make_legend_ellipse(legend, orig_handle,
+                        xdescent, ydescent,
+                        width, height, fontsize):
+    """
+    stolen from http://matplotlib.org/examples/pylab_examples/legend_demo_custom_handler.html
+    """
+    p = mpatches.Ellipse(xy=(0.5*width-0.5*xdescent, 0.5*height-0.5*ydescent),
+                         width = width+xdescent, height=(height+ydescent))
+
+    return p
+
+
 
 
 def Triangle_plot_Cov(Cov,x_mean,**kwargs):
@@ -138,6 +154,8 @@ def Triangle_plot_Cov_dat(guesses,flag,x_mean,Cov,titles,which_par,**kwargs):
             ax_temp.set_xlim(x1.min(),x1.max())
             ax_temp.set_ylim(y1.min(),y1.max())
             #pass
+    fig = plt.gcf()
+    fig.legend((ell, ell2), ('Planck 2015', 'MCMC Covariance'), 'upper right')
     return axScatter, axHistx
 
 def plot_like_profile(guesses,like,flag,titles,which_par,save=0):
@@ -163,7 +181,7 @@ def plot_like_profile(guesses,like,flag,titles,which_par,save=0):
         plt.legend(loc="best")
         if save!=0:
             plt.savefig("plots/log_like_profile_%s_%s_%d.png"%(save,str(which_par).replace(',','').replace('[','').replace(']','').replace(' ',''),j))#,SafeID))
-
+    
 def plot_like(guesses,like,flag,titles,which_par,save=0):
     """
     Plots the likelihood values, ie the log likelihood as a function of iteration.
