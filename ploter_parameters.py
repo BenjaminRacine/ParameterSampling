@@ -125,8 +125,8 @@ def Triangle_plot_Cov_dat(guesses,flag,x_mean,Cov,titles,which_par,**kwargs):
         ax_temp.locator_params(tight=True,nbins=4)
         x1 = np.linspace(x_mean[i]- 5*np.sqrt(Cov[i,i]),x_mean[i] + 5*np.sqrt(Cov[i,i]),200)
         #sUtahtop
-        ax_temp.plot(x1,np.exp(-0.5*(x1-x_mean[i])**2/Cov[i,i])/np.sqrt(2*np.pi*Cov[i,i]),**kwargs)
-        ax_temp.hist(guesses[:,i][flag>0],np.sqrt(sum(flag>0)),histtype="step",normed=True)
+        ax_temp.plot(x1,np.exp(-0.5*(x1-x_mean[i])**2/Cov[i,i])/np.sqrt(2*np.pi*Cov[i,i]),"b")
+        ax_temp.hist(guesses[:,i][flag>0],np.sqrt(sum(flag>0)),histtype="step",normed=True,color='g')
         ax_temp.set_title(titles[which_par[i]],y=1.25)
         ax_temp.set_xlim(x1.min(),x1.max())
         for j in range(i+1,nb_param):
@@ -135,12 +135,12 @@ def Triangle_plot_Cov_dat(guesses,flag,x_mean,Cov,titles,which_par,**kwargs):
             rect_scatter = [left+(i)*width, bottom+(nb_param-j-1)*width, width, width]
             y1 = np.linspace(x_mean[j]- 5*np.sqrt(Cov[j,j]),x_mean[j] + 5*np.sqrt(Cov[j,j]),200)
             ax_temp=plt.axes(rect_scatter)
-            ell = plot_ellipse(Cov[[i,j],:][:,[i,j]],x_mean[[i,j]],1,plot=1,axe=ax_temp,fill=False)
-            ell2 = plot_ellipse(covar,means,1,plot=1,axe=ax_temp,fill=False,color="y")
+            ell = plot_ellipse(Cov[[i,j],:][:,[i,j]],x_mean[[i,j]],1,plot=1,axe=ax_temp,fill=False,color="b")
+            ell2 = plot_ellipse(covar,means,1,plot=1,axe=ax_temp,fill=False,color="g")
 
-            ax_temp.scatter(guesses[:,i][flag==0],guesses[:,j][flag==0],color="k",alpha=0.05)
-            ax_temp.scatter(guesses[:,i][flag==1],guesses[:,j][flag==1],color="g",alpha=0.3)
-            ax_temp.scatter(guesses[:,i][flag==2],guesses[:,j][flag==2],color="r",alpha=0.3)
+            ax_temp.scatter(guesses[:,i][flag==0],guesses[:,j][flag==0],color="r",alpha=0.05)
+            scat = ax_temp.scatter(guesses[:,i][flag==1],guesses[:,j][flag==1],color="r",alpha=0.05)
+            ax_temp.scatter(guesses[:,i][flag==2],guesses[:,j][flag==2],color="r",alpha=0.05)
 #            ax_temp.add_artist(ell)
             #ax_temp.plot(np.arange(12))
             if i==0:
@@ -155,7 +155,7 @@ def Triangle_plot_Cov_dat(guesses,flag,x_mean,Cov,titles,which_par,**kwargs):
             ax_temp.set_ylim(y1.min(),y1.max())
             #pass
     fig = plt.gcf()
-    fig.legend((ell, ell2), ('Planck 2015', 'MCMC Covariance'), 'upper right')
+    fig.legend((ell, scat, ell2), ('Planck 2015', 'MCMC steps','MCMC Covariance'), 'upper right')
     return axScatter, axHistx
 
 def plot_like_profile(guesses,like,flag,titles,which_par,save=0):
