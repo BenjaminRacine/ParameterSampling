@@ -111,7 +111,7 @@ def Triangle_plot_Cov_dat(guesses,flag,x_mean,Cov,titles,which_par,**kwargs):
         #sUtahtop
         ax_temp.plot(x1,np.exp(-0.5*(x1-x_mean[i])**2/Cov[i,i])/np.sqrt(2*np.pi*Cov[i,i]),**kwargs)
         ax_temp.hist(guesses[:,i][flag>0],np.sqrt(sum(flag>0)),histtype="step",normed=True)
-        ax_temp.set_title(titles[which_par[i]],y=1.3)
+        ax_temp.set_title(titles[which_par[i]],y=1.25)
         ax_temp.set_xlim(x1.min(),x1.max())
         for j in range(i+1,nb_param):
             covar = np.cov([guesses[:,i],guesses[:,j]])
@@ -221,7 +221,7 @@ def plot_chains(guesses,flag,chains,titles,which_par,x_mean,Cov,save=0):
 
 
 
-def plot_autocorr(guesses,flag,titles,which_par,burnin_cut,save=0):
+def plot_autocorr(guesses,flag,titles,which_par,burnin_cut,max_plot,save=0):
     """
     Plots the chains for all parameters, and the priors
 
@@ -237,7 +237,7 @@ def plot_autocorr(guesses,flag,titles,which_par,burnin_cut,save=0):
     for i in which_par:
         print j
         plt.figure()
-        plt.plot(MH.autocorr(guesses[flag>0,j][burnin_cut:]))
+        plt.plot(MH.autocorr(guesses[flag>0,j][burnin_cut:])[:max_plot])
         plt.title("%s autocorrelation"%titles[i])
         plt.ylabel(titles[i])
         plt.xlabel("Lag")
@@ -267,7 +267,7 @@ def plot_all(chain,titles,which_par,x_mean,Cov,burnin_cut=50,save=0,plot_int = 0
     like=like[flag!=-2]
     flag=flag[flag!=-2]
     chains = real_chain(guesses,flag)
-    plot_autocorr(chains,np.ones(len(flag)),titles,which_par,burnin_cut,save)
+    plot_autocorr(chains,np.ones(len(flag)),titles,which_par,burnin_cut,500,save)
     plot_chains(guesses,flag,chains,titles,which_par,x_mean,Cov,save)
     plt.figure()
     Triangle_plot_Cov_dat(chains,np.ones(len(flag)),x_mean,Cov,titles,which_par)
