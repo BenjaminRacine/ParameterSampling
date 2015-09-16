@@ -5,6 +5,7 @@ from matplotlib.patches import Ellipse
 import MH_module as MH
 from matplotlib.legend_handler import HandlerPatch
 import tabulate as T
+import scipy
 
 def determine_FD_binning(array_in):
     '''
@@ -340,14 +341,14 @@ def create_real_chain(MCMC_output):
     Cls=Cls[flag!=-2]
     like=like[flag!=-2]
     flag=flag[flag!=-2]
-    chains = plp.real_chain(guesses,flag)
+    chains = real_chain(guesses,flag)
     return chains
 
 def compare_chains(chain1,chain2,save = 0,burnin_cut = [200,200],titles = np.array(["$\Omega_b h^2$","$\Omega_c h^2$",r"$\tau$","$A_s$","$n_s$","$H_0$"]),lab = ["chain 1","chain 2"]):
     chain_1 = create_real_chain(chain1)[burnin_cut[0]:,:]
     chain_2 = create_real_chain(chain2)[burnin_cut[1]:,:]
-    bin_1 = determine_FD_binning(chain_1)
-    bin_2 = determine_FD_binning(chain_2)
+    bin_1 = np.sqrt(np.shape(chain_1)[0])
+    bin_2 = np.sqrt(np.shape(chain_2)[0])
     for i in range(6):
         plt.subplot(3,2,i+1)
         his_ex = plt.hist(chain_1[:,i],bin_1,histtype='step',normed=True,label = lab[0],alpha=0.5,color="g")
@@ -368,8 +369,8 @@ def compare_chains(chain1,chain2,save = 0,burnin_cut = [200,200],titles = np.arr
     plt.figure()
     for i in range(6):
         plt.subplot(3,2,i+1)
-        plt.plot(chain_ex[:,i],label = lab[0],alpha=0.5,color="g")
-        plt.plot(chain_Jji[:,i],label = lab[1],alpha=0.5,color="b")
+        plt.plot(chain_1[:,i],label = lab[0],alpha=0.5,color="g")
+        plt.plot(chain_2[:,i],label = lab[1],alpha=0.5,color="b")
         plt.title(titles[i])
         plt.tight_layout()
         plt.locator_params(nbins=4)
@@ -379,18 +380,20 @@ def compare_chains(chain1,chain2,save = 0,burnin_cut = [200,200],titles = np.arr
     plt.figure()
     for i in range(6):
         plt.subplot(3,2,i+1)
-        plt.plot(chain_ex[:1000,i],label = lab[0],alpha=0.5,color="g")
-        plt.plot(chain_Jji[:1000,i],label = lab[1],alpha=0.5,color="b")
+        plt.plot(chain_1[:1000,i],label = lab[0],alpha=0.5,color="g")
+        plt.plot(chain_2[:1000,i],label = lab[1],alpha=0.5,color="b")
         plt.title(titles[i])
         plt.tight_layout()
-        plt.savefig("plots/Trace_plot_zoom_burn%d_%s.png"%(burnin_cut,save))
+        if save!=0:
+            plt.savefig("plots/Trace_plot_zoom_burn%d_%s.png"%(burnin_cut,save))
     plt.figure()
-    handle_ex, = plt.plot(chain_ex[:,i],label = "exact chain",alpha=0.5,color="g")
-    handle_Jji, = plt.plot(chain_Jji[:,i],label = "New idea chain",alpha=0.5,color="b")
+    handle_1, = plt.plot(chain_1[:,i],label = lab[0],alpha=0.5,color="g")
+    handle_Jji, = plt.plot(chain_Jji[:,i],label = lab[1],alpha=0.5,color="b")
     figlegend = plt.figure(figsize=(3,2))
-    figlegend.legend([handle_ex,handle_Jji],["'exact' chains","'new idea' chains"],"center")
+    figlegend.legend([handle_1,handle_Jji],[lab[0],lab[1]],"center")
     figlegend.show()
-    figlegend.savefig('plots/legend_%s.png'%save)
+    if save!=0:
+        figlegend.savefig('plots/legend_%s.png'%save)
     header = [" "]
     mean_1 = ["mean %s"%lab[0]]
     mean_2 = ["mean %s"%lab[1]]
