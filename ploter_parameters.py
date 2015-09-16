@@ -4,8 +4,28 @@ from matplotlib.ticker import NullFormatter
 from matplotlib.patches import Ellipse  
 import MH_module as MH
 from matplotlib.legend_handler import HandlerPatch
+import tabulate as T
 
+def determine_FD_binning(array_in):
+    '''
+    returns the optimal binning, according to Freedman-Diaconis rule: see http://en.wikipedia.org/wiki/Freedman%E2%80%93Diaconis_rule                           
+    '''
+    sorted_arr = np.sort(array_in)
+    Q3 = scipy.stats.scoreatpercentile(sorted_arr,3/4.)
+    Q1 = scipy.stats.scoreatpercentile(sorted_arr,1/4.)
+    IQR = Q3-Q1
+    bin_size = 2.*IQR*np.size(array_in)**(-1/3.)
+    return min(np.round(np.sqrt(np.size(array_in))),np.round((sorted_arr[-1] - sorted_arr[0])/bin_size))
 
+class HandlerEllipse(HandlerPatch):
+    def create_artists(self, legend, orig_handle,
+                       xdescent, ydescent, width, height, fontsize, trans):
+        center = 0.5 * width - 0.5 * xdescent, 0.5 * height - 0.5 * ydescent
+        p = mpatches.Ellipse(xy=center, width=width + xdescent,
+                             height=height + ydescent)
+        self.update_prop(p, orig_handle, legend)
+        p.set_transform(trans)
+        return [p]
 
 def make_legend_ellipse(legend, orig_handle,
                         xdescent, ydescent,
@@ -136,11 +156,11 @@ def Triangle_plot_Cov_dat(guesses,flag,x_mean,Cov,titles,which_par,**kwargs):
             y1 = np.linspace(x_mean[j]- 5*np.sqrt(Cov[j,j]),x_mean[j] + 5*np.sqrt(Cov[j,j]),200)
             ax_temp=plt.axes(rect_scatter)
             ell = plot_ellipse(Cov[[i,j],:][:,[i,j]],x_mean[[i,j]],1,plot=1,axe=ax_temp,fill=False,color="b")
-            ell2 = plot_ellipse(covar,means,1,plot=1,axe=ax_temp,fill=False,color="g")
+            ell2 = plot_ellipse(covar,means,1,plot=1,axe=ax_temp,fill=False,color="r")
 
-            ax_temp.scatter(guesses[:,i][flag==0],guesses[:,j][flag==0],color="r",alpha=0.05)
-            scat = ax_temp.scatter(guesses[:,i][flag==1],guesses[:,j][flag==1],color="r",alpha=0.05)
-            ax_temp.scatter(guesses[:,i][flag==2],guesses[:,j][flag==2],color="r",alpha=0.05)
+            ax_temp.scatter(guesses[:,i][flag==0],guesses[:,j][flag==0],color="g",alpha=0.05)
+            scat = ax_temp.scatter(guesses[:,i][flag==1],guesses[:,j][flag==1],color="g",alpha=0.05)
+            ax_temp.scatter(guesses[:,i][flag==2],guesses[:,j][flag==2],color="g",alpha=0.05)
 #            ax_temp.add_artist(ell)
             #ax_temp.plot(np.arange(12))
             if i==0:
@@ -155,7 +175,7 @@ def Triangle_plot_Cov_dat(guesses,flag,x_mean,Cov,titles,which_par,**kwargs):
             ax_temp.set_ylim(y1.min(),y1.max())
             #pass
     fig = plt.gcf()
-    fig.legend((ell, scat, ell2), ('Planck 2015', 'MCMC steps','MCMC Covariance'), 'upper right')
+    plt.legend([ell, scat, ell2], ['Planck 2015', 'MCMC steps','MCMC Covariance'], "upper right")
     return axScatter, axHistx
 
 def plot_like_profile(guesses,like,flag,titles,which_par,save=0):
@@ -308,3 +328,91 @@ def real_chain(guesses,flag):
     for k in range(accep_idx[-1],len(guesses)):
         guesse_new[k] = guesse_new[accep_idx[-1]]
     return guesse_new
+
+def create_real_chain(MCMC_output):
+    """
+    Return a clean chain, ie: the guesses where rejected with previous accepted value, from the output of the code
+    """
+    guesses,flag,like,Cls = MCMC_output
+    guesses = np.concatenate(guesses)
+    guesses = guesses.reshape(len(guesses)/6.,6)
+
+    Cls=Cls[flag!=-2]
+    like=like[flag!=-2]
+    flag=flag[flag!=-2]
+    chains = plp.real_chain(guesses,flag)
+    return chains
+
+def compare_chains(chain1,chain2,save = 0,burnin_cut = [200,200],titles = np.array(["$\Omega_b h^2$","$\Omega_c h^2$",r"$\tau$","$A_s$","$n_s$","$H_0$"]),lab = ["chain 1","chain 2"]):
+    chain_1 = create_real_chain(chain1)[burnin_cut[0]:,:]
+    chain_2 = create_real_chain(chain2)[burnin_cut[1]:,:]
+    bin_1 = determine_FD_binning(chain_1)
+    bin_2 = determine_FD_binning(chain_2)
+    for i in range(6):
+        plt.subplot(3,2,i+1)
+        his_ex = plt.hist(chain_1[:,i],bin_1,histtype='step',normed=True,label = lab[0],alpha=0.5,color="g")
+        his_Jji = plt.hist(chain_2[:,i],bin_2,histtype='step',normed=True,label = lab[1],alpha=0.5,color="b")
+        plt.title(titles[i])
+        plt.tight_layout()
+        if save!=0:
+            plt.savefig("plots/Marginal_1D_lin_burn%d_%s.png"%(burnin_cut,save))
+    plt.figure()
+    for i in range(6):
+        plt.subplot(3,2,i+1)
+        his_ex = plt.hist(chain_1[:,i],bin_1,histtype='step',normed=True,label = lab[0],alpha=0.5,log=True,color='g')
+        his_Jji = plt.hist(chain_2[:,i],bin_2,histtype='step',normed=True,label = lab[1],alpha=0.5,log=True,color='b')
+        plt.title(titles[i])
+        plt.tight_layout()
+        if save!=0:
+            plt.savefig("plots/Marginal_1D_log_burn%d_%s.png"%(burnin_cut,save))
+    plt.figure()
+    for i in range(6):
+        plt.subplot(3,2,i+1)
+        plt.plot(chain_ex[:,i],label = lab[0],alpha=0.5,color="g")
+        plt.plot(chain_Jji[:,i],label = lab[1],alpha=0.5,color="b")
+        plt.title(titles[i])
+        plt.tight_layout()
+        plt.locator_params(nbins=4)
+        plt.xlim(0,100000)
+        if save!=0:
+            plt.savefig("plots/Trace_plot_burn%d_%s.png"%(burnin_cut,save))
+    plt.figure()
+    for i in range(6):
+        plt.subplot(3,2,i+1)
+        plt.plot(chain_ex[:1000,i],label = lab[0],alpha=0.5,color="g")
+        plt.plot(chain_Jji[:1000,i],label = lab[1],alpha=0.5,color="b")
+        plt.title(titles[i])
+        plt.tight_layout()
+        plt.savefig("plots/Trace_plot_zoom_burn%d_%s.png"%(burnin_cut,save))
+    plt.figure()
+    handle_ex, = plt.plot(chain_ex[:,i],label = "exact chain",alpha=0.5,color="g")
+    handle_Jji, = plt.plot(chain_Jji[:,i],label = "New idea chain",alpha=0.5,color="b")
+    figlegend = plt.figure(figsize=(3,2))
+    figlegend.legend([handle_ex,handle_Jji],["'exact' chains","'new idea' chains"],"center")
+    figlegend.show()
+    figlegend.savefig('plots/legend_%s.png'%save)
+    header = [" "]
+    mean_1 = ["mean %s"%lab[0]]
+    mean_2 = ["mean %s"%lab[1]]
+    std_1 = ["std %s"%lab[0]]
+    std_2 = ["std %s"%lab[1]]
+    skewness_1 = ["skew : %s"%lab[0]]
+    skewness_2 = ["skew : %s"%lab[1]]
+    kurt_1 = ["kurt : %s"%lab[0]]
+    kurt_2 = ["kurt : %s"%lab[1]]
+    ratios = ["std : %s/%s"%(lab[0],lab[1])]
+    for i in range(6):
+        header.append(titles[i])
+        mean_1.append(chain_1[:,i].mean())
+        mean_2.append(chain_2[:,i].mean())
+        std_1.append(chain_1[:,i].std())
+        std_2.append(chain_2[:,i].std())
+        skewness_1.append(scipy.stats.skew(chain_1[:,i]))
+        skewness_2.append(scipy.stats.skew(chain_2[:,i]))
+        kurt_1.append(scipy.stats.kurtosis(chain_1[:,i]))
+        kurt_2.append(scipy.stats.kurtosis(chain_2[:,i]))
+        ratios.append(chain_1[:,i].std()/chain_2[:,i].std())
+        table = [mean_1,mean_2,std_1,std_2,ratios,skewness_1,skewness_2,kurt_1,kurt_2]
+    print T.tabulate(table, header,tablefmt="pipe")
+
+
