@@ -351,8 +351,8 @@ def compare_chains(chain1,chain2,save = 0,burnin_cut = [200,200],titles = np.arr
     bin_2 = np.sqrt(np.shape(chain_2)[0])
     for i in range(6):
         plt.subplot(3,2,i+1)
-        his_ex = plt.hist(chain_1[:,i],bin_1,histtype='step',normed=True,label = lab[0],alpha=0.5,color="g")
-        his_Jji = plt.hist(chain_2[:,i],bin_2,histtype='step',normed=True,label = lab[1],alpha=0.5,color="b")
+        his_1 = plt.hist(chain_1[:,i],bin_1,histtype='step',normed=True,label = lab[0],alpha=0.5,color="g")
+        his_2 = plt.hist(chain_2[:,i],bin_2,histtype='step',normed=True,label = lab[1],alpha=0.5,color="b")
         plt.title(titles[i])
         plt.tight_layout()
         if save!=0:
@@ -360,8 +360,8 @@ def compare_chains(chain1,chain2,save = 0,burnin_cut = [200,200],titles = np.arr
     plt.figure()
     for i in range(6):
         plt.subplot(3,2,i+1)
-        his_ex = plt.hist(chain_1[:,i],bin_1,histtype='step',normed=True,label = lab[0],alpha=0.5,log=True,color='g')
-        his_Jji = plt.hist(chain_2[:,i],bin_2,histtype='step',normed=True,label = lab[1],alpha=0.5,log=True,color='b')
+        his_1 = plt.hist(chain_1[:,i],bin_1,histtype='step',normed=True,label = lab[0],alpha=0.5,log=True,color='g')
+        his_2 = plt.hist(chain_2[:,i],bin_2,histtype='step',normed=True,label = lab[1],alpha=0.5,log=True,color='b')
         plt.title(titles[i])
         plt.tight_layout()
         if save!=0:
@@ -388,9 +388,9 @@ def compare_chains(chain1,chain2,save = 0,burnin_cut = [200,200],titles = np.arr
             plt.savefig("plots/Trace_plot_zoom_burn%d_%s.png"%(burnin_cut,save))
     plt.figure()
     handle_1, = plt.plot(chain_1[:,i],label = lab[0],alpha=0.5,color="g")
-    handle_Jji, = plt.plot(chain_Jji[:,i],label = lab[1],alpha=0.5,color="b")
+    handle_2, = plt.plot(chain_2[:,i],label = lab[1],alpha=0.5,color="b")
     figlegend = plt.figure(figsize=(3,2))
-    figlegend.legend([handle_1,handle_Jji],[lab[0],lab[1]],"center")
+    figlegend.legend([handle_1,handle_2],[lab[0],lab[1]],"center")
     figlegend.show()
     if save!=0:
         figlegend.savefig('plots/legend_%s.png'%save)
