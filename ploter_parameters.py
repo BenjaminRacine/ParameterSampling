@@ -138,7 +138,7 @@ def Triangle_plot_Cov_dat(guesses,flag,x_mean,Cov,titles,which_par,**kwargs):
     nullfmt   = NullFormatter()
     nb_param = guesses.shape[1]
     # definitions for the axes (left width and left_h is also bottom height and bottom_h)
-    left = 0.4/(nb_param)
+    left = 0.06#/(nb_param)
     bottom = 0.1/(nb_param)
     width = 0.9/(nb_param) 
     axHistx=[]
@@ -155,9 +155,10 @@ def Triangle_plot_Cov_dat(guesses,flag,x_mean,Cov,titles,which_par,**kwargs):
         x1 = np.linspace(x_mean[i]- 5*np.sqrt(Cov[i,i]),x_mean[i] + 5*np.sqrt(Cov[i,i]),200)
         #sUtahtop
         ax_temp.plot(x1,np.exp(-0.5*(x1-x_mean[i])**2/Cov[i,i])/np.sqrt(2*np.pi*Cov[i,i]),"b")
-        ax_temp.hist(guesses[:,i][flag>0],np.round(np.sqrt(sum(flag>0))),histtype="step",normed=True,color='g')
+        ax_temp.hist(guesses[:,i],np.round(np.sqrt(guesses.shape[0])),histtype="step",normed=True,color='g')
         ax_temp.set_title(titles[which_par[i]],y=1.25)
-        ax_temp.set_xlim(x1.min(),x1.max())
+        ax_temp.set_xlim(np.min((guesses[:,i].mean()-5*guesses[:,i].std(),x1.min())),np.max((guesses[:,i].mean()+5*guesses[:,i].std(),x1.max())))
+        #ax_temp.set_xlim(x1.min(),x1.max())
         for j in range(i+1,nb_param):
             covar = np.cov([guesses[:,i],guesses[:,j]])
             means = [guesses[:,i].mean(),guesses[:,j].mean()]
@@ -167,9 +168,10 @@ def Triangle_plot_Cov_dat(guesses,flag,x_mean,Cov,titles,which_par,**kwargs):
             ell = plot_ellipse(Cov[[i,j],:][:,[i,j]],x_mean[[i,j]],1,plot=1,axe=ax_temp,fill=False,color="b")
             ell2 = plot_ellipse(covar,means,1,plot=1,axe=ax_temp,fill=False,color="r")
 
-            ax_temp.scatter(guesses[:,i][flag==0],guesses[:,j][flag==0],color="g",alpha=0.05)
-            scat = ax_temp.scatter(guesses[:,i][flag==1],guesses[:,j][flag==1],color="g",alpha=0.05)
-            ax_temp.scatter(guesses[:,i][flag==2],guesses[:,j][flag==2],color="g",alpha=0.05)
+            #ax_temp.scatter(guesses[:,i][flag==0],guesses[:,j][flag==0],color="g",alpha=0.05)
+            #scat = ax_temp.scatter(guesses[:,i][flag==1],guesses[:,j][flag==1],color="g",alpha=0.05)
+            #ax_temp.scatter(guesses[:,i][flag==2],guesses[:,j][flag==2],color="g",alpha=0.05)
+            scat = ax_temp.scatter(guesses[:,i],guesses[:,j],color="g",alpha=0.05)
 #            ax_temp.add_artist(ell)
             #ax_temp.plot(np.arange(12))
             if i==0:
@@ -180,11 +182,12 @@ def Triangle_plot_Cov_dat(guesses,flag,x_mean,Cov,titles,which_par,**kwargs):
             ax_temp.xaxis.set_visible(False)
             ax_temp.locator_params(tight=True,nbins=4)
             axScatter.append(ax_temp)
-            ax_temp.set_xlim(x1.min(),x1.max())
-            ax_temp.set_ylim(y1.min(),y1.max())
+            ax_temp.set_xlim(np.min((means[0]-5*np.sqrt(covar[0,0]),x1.min())),np.max((means[0]+5*np.sqrt(covar[0,0]),x1.max())))
+            ax_temp.set_ylim(np.min((means[1]-5*np.sqrt(covar[1,1]),y1.min())),np.max((means[1]+5*np.sqrt(covar[1,1]),y1.max())))
+            #ax_temp.set_ylim(y1.min(),y1.max())
             #pass
     fig = plt.gcf()
-    plt.legend([ell, scat, ell2], ['Planck 2015', 'MCMC steps','MCMC Covariance'], "upper right")
+    fig.legend([ell, scat, ell2], ['Planck 2015', 'MCMC steps','MCMC Covariance'], "upper right")
     return axScatter, axHistx
 
 def plot_like_profile(guesses,like,flag,titles,which_par,save=0):
@@ -249,7 +252,7 @@ def plot_chains(guesses,flag,chains,titles,which_par,x_mean,Cov,save=0):
     j=0
     for i in which_par:
         plt.figure()
-        plt.plot(chains[:,j],'b.',alpha = 0.5,label='MC chain')
+        plt.plot(np.arange(np.where(flag>0)[0][0],niter),chains[:,j],'b.',alpha = 0.5,label='MC chain')
         plt.plot(np.arange(niter)[flag==0],guesses[flag==0,j],'k.',alpha = 0.2,label='Rejected')
         plt.plot(np.arange(niter)[flag==1],guesses[flag==1,j],'g.',label="Accepted")
         plt.plot(np.arange(niter)[flag==2],guesses[flag==2,j],'r.',label='Lucky accepted')
@@ -284,7 +287,7 @@ def plot_autocorr(guesses,flag,titles,which_par,burnin_cut,max_plot,save=0):
     for i in which_par:
         print j
         plt.figure()
-        plt.plot(MH.autocorr(guesses[flag>0,j][burnin_cut:])[:max_plot])
+        plt.plot(MH.autocorr(guesses[:,j][burnin_cut:])[:max_plot])
         plt.title("%s autocorrelation"%titles[i])
         plt.ylabel(titles[i])
         plt.xlabel("Lag")
@@ -331,15 +334,15 @@ def real_chain(guesses,flag):
     fills the guesses where rejected with previous accepted value
     """
     guesse_new = guesses.copy()
-    print "in    ",guesse_new.shape
     accep_idx = np.where(flag>0)[0]
-    accep_idx.shape
     for i in range(len(accep_idx)-1):
         for j in range(accep_idx[i],accep_idx[i+1]):
             guesse_new[j] = guesse_new[accep_idx[i]]
     for k in range(accep_idx[-1],len(guesses)):
         guesse_new[k] = guesse_new[accep_idx[-1]]
-    return guesse_new
+    print accep_idx[0]
+    print guesse_new[accep_idx[0]:].shape[0]
+    return guesse_new[accep_idx[0]:]
 
 def create_real_chain(MCMC_output):
     """
