@@ -42,22 +42,22 @@ def target_distrib(guess, *arg):
     dd = cb.update_dic(params,guess,strings)
     Cl_new = cb.generate_spectrum(dd)[:,1]
     Cl_new[:2] = 1.e-35
-    print "new = ",Cl_new[50]
-    print "old = ",Cl_old[50]
+    #print "new = ",Cl_new[50]
+    #print "old = ",Cl_old[50]
     renorm = CG.renorm_term(Cl_new,bl,nl)
     mf_lm_new = hp.almxfl(CG.generate_mfterm(dlm,Cl_new,bl,nl),renorm)
     fluc_lm_type2 = hp.almxfl(CG.generate_w1term(Cl_new,bl,nl)+CG.generate_w0term(Cl_new),renorm)
-    print "new = ",fluc_lm_type2[50]
-    print "old = ",fluc_lm_old[50]
+    #print "new = ",fluc_lm_type2[50]
+    #print "old = ",fluc_lm_old[50]
     fluc_lm_determ = hp.almxfl(fluc_lm_old,np.sqrt(Cl_new/Cl_old))
     tt1 = -1/2.*np.real(np.vdot((dlm-hp.almxfl(mf_lm_new,bl)).T,hp.almxfl((dlm-hp.almxfl(mf_lm_new,bl)),1/nl)))
-    print tt1
+    #print tt1
     tt2 = -1/2. *np.real(np.vdot((mf_lm_new).T,hp.almxfl((mf_lm_new),1./Cl_new)))
-    print tt2
+    #print tt2
     tt3 = -1/2. *np.real(np.vdot((fluc_lm_determ).T,hp.almxfl((fluc_lm_determ),1/nl*bl**2)))
-    print tt3
+    #print tt3
     #tt4 = - 1./2 *(np.arange(1,np.size(Cl_new)+1)*np.log(Cl_new)).sum()
-    #print tt4
+    ##print tt4
     return [tt1,tt2,tt3],Cl_new,fluc_lm_type2
 
 def test_loglike_Ji(guess, *arg):
@@ -69,7 +69,7 @@ def test_loglike_Ji(guess, *arg):
     arg[0] -- a target class object
     arg[1] -- Cl_old, fluc_lm_old
     """
-    #print guess, arg
+    ##print guess, arg
     dlm,strings,params,nl,bl,Cl_new = arg[0]
     Cl_old, fluc_lm_old = arg[1]
     Cl_new[:2] = 1.e-35
@@ -142,11 +142,11 @@ def functional_form_params_n(x,*arg):
     beam = arg[4]
     #params["output_root"] = '../Codes/CG_git/MH_MCMC/camb_ini/test%d'%np.random.randint(100)
     for i in range(np.size(x)):
-        #print strings[i]
+        ##print strings[i]
         if strings[i]=='scalar_amp(1)':
-            #print params[strings[i]]
+            ##print params[strings[i]]
             params[strings[i]]=np.exp(x[i])*1e-10
-            #print params[strings[i]]
+            ##print params[strings[i]]
         else:
             params[strings[i]]=x[i]
     Cl = cb.generate_spectrum(params)
@@ -181,7 +181,7 @@ def target_distrib_newrescale(guess, *arg):
     arg[0] -- a target class object
     arg[1] -- Cl_old, fluc_lm_old
     """
-    #print guess, arg
+    ##print guess, arg
     dlm,strings,params,nl,bl = arg[0]
     Cl_old, fluc_lm_old = arg[1]
     dd = cb.update_dic(params,guess,strings)
@@ -190,27 +190,27 @@ def target_distrib_newrescale(guess, *arg):
     Cl_new = cb.generate_spectrum(dd)[:lmax,1]
     # avoid dividing by 0
     Cl_new[:2] = 1.e-35
-    print "new = ",Cl_new[50]
-    print "old = ",Cl_old[50]
+    #print "new = ",Cl_new[50]
+    #print "old = ",Cl_old[50]
     # renormalization, i.e. lhs part of eq (24) and (25)
     renorm = CG.renorm_term(Cl_new,bl,nl)
     # generate mean field map using new PS
     mf_lm_new = hp.almxfl(CG.generate_mfterm(dlm,Cl_new,bl,nl),renorm)
     # generate fluctuation map using new PS, this is actually the 'step 2', with acceptance 1, won't be used anymore in this function
     fluc_lm_type2 = hp.almxfl(CG.generate_w1term(Cl_new,bl,nl)+CG.generate_w0term(Cl_new),renorm)
-    print "new = ",fluc_lm_type2[50]
-    print "old = ",fluc_lm_old[50]
+    #print "new = ",fluc_lm_type2[50]
+    #print "old = ",fluc_lm_old[50]
     # get deterministic fluctuation map (new rescaling with noise)
     fluc_lm_determ = hp.almxfl(fluc_lm_old,np.sqrt((1./Cl_old+bl**2/nl))/np.sqrt((1./Cl_new+bl**2/nl)))
     # Chi2 part of the likelihood
     tt1 = -1/2.*np.real(np.vdot((dlm-hp.almxfl(mf_lm_new,bl)).T,hp.almxfl((dlm-hp.almxfl(mf_lm_new,bl)),1/nl)))
-    print tt1
+    #print tt1
     # "mean field part" of the likelihood
     tt2 = -1/2. *np.real(np.vdot((mf_lm_new).T,hp.almxfl((mf_lm_new),1./Cl_new)))
-    print tt2
+    #print tt2
     # "fluctuation part" of the likelihood
     tt3 = -1/2. *np.real(np.vdot((fluc_lm_determ).T,hp.almxfl((fluc_lm_determ),1/nl*bl**2+1/Cl_new)))
-    print tt3
+    #print tt3
     # we return Cl_new and fluc_lm_type2 for next iteration.
     return [tt1,tt2,tt3],Cl_new,fluc_lm_type2
 
@@ -225,7 +225,7 @@ def test_fluctuation_term(guess, *arg):
     arg[0] -- a target class object
     arg[1] -- Cl_old, fluc_lm_old
     """
-    #print guess, arg
+    ##print guess, arg
     dlm,strings,params,nl,bl = arg[0]
     Cl_old, fluc_lm_old = arg[1]
     dd = cb.update_dic(params,guess,strings)
@@ -234,20 +234,20 @@ def test_fluctuation_term(guess, *arg):
     Cl_new = cb.generate_spectrum(dd)[:lmax,1]
     # avoid dividing by 0
     Cl_new[:2] = 1.e-35
-    print "new = ",Cl_new[50]
-    print "old = ",Cl_old[50]
+    #print "new = ",Cl_new[50]
+    #print "old = ",Cl_old[50]
     # renormalization, i.e. lhs part of eq (24) and (25)
     renorm = CG.renorm_term(Cl_new,bl,nl)
 
     # generate fluctuation map using new PS, this is actually the 'step 2', with acceptance 1, won't be used anymore in this function
     fluc_lm_type2 = hp.almxfl(CG.generate_w1term(Cl_new,bl,nl)+CG.generate_w0term(Cl_new),renorm)
-    print "new = ",fluc_lm_type2[50]
-    print "old = ",fluc_lm_old[50]
+    #print "new = ",fluc_lm_type2[50]
+    #print "old = ",fluc_lm_old[50]
     # get deterministic fluctuation map (new rescaling with noise)
     fluc_lm_determ = hp.almxfl(fluc_lm_old,np.sqrt((1./Cl_old+bl**2/nl))/np.sqrt((1./Cl_new+bl**2/nl)))
     # "fluctuation part" of the likelihood
     tt3 = -1/2. *np.real(np.vdot((fluc_lm_determ).T,hp.almxfl((fluc_lm_determ),1/nl*bl**2)))
-    print tt3
+    #print tt3
     # we return Cl_new and fluc_lm_type2 for next iteration.
     return tt3,Cl_new,fluc_lm_type2,fluc_lm_determ
 
@@ -267,7 +267,7 @@ def Step_MC_withnoise(guess, *arg):
     arg[0] -- a target class object
     arg[1] -- Cl_old, fluc_lm_old
     """
-    #print guess, arg
+    ##print guess, arg
     dlm,strings,params,nl,bl = arg[0]
     Cl_old, fluc_lm_GS,mf_old = arg[1]
     dd = cb.update_dic(params,guess,strings)
@@ -276,8 +276,8 @@ def Step_MC_withnoise(guess, *arg):
     Cl_new = cb.generate_spectrum(dd)[:lmax,1]
     # avoid dividing by 0
     Cl_new[:2] = 1.e-35
-    print "new = ",Cl_new[50]
-    print "old = ",Cl_old[50]
+    #print "new = ",Cl_new[50]
+    #print "old = ",Cl_old[50]
     # renormalization, i.e. lhs part of eq (24) and (25)
     renorm = CG.renorm_term(Cl_new,bl,nl)
     # generate mean field map using new PS
@@ -299,19 +299,19 @@ def diff_fixed_like_withnoise(fluc_lm_determ,fluc_lm_GS,mf_lm_new,mf_lm_old,Cl_n
     arg[0] -- a target class object
     arg[1] -- Cl_old, fluc_lm_old
     """
-    #print guess, arg
+    ##print guess, arg
     dlm,strings,params,nl,bl = arg[0]
     tt1_new = -1/2.*np.real(np.vdot((dlm-hp.almxfl(mf_lm_new,bl)).T,hp.almxfl((dlm-hp.almxfl(mf_lm_new,bl)),1/nl)))
     tt1_old = -1/2.*np.real(np.vdot((dlm-hp.almxfl(mf_lm_old,bl)).T,hp.almxfl((dlm-hp.almxfl(mf_lm_old,bl)),1/nl)))
-    print "chi**2 = ",tt1_new-tt1_old
+    #print "chi**2 = ",tt1_new-tt1_old
     # "mean field part" of the likelihood
     tt2_new = -1/2. *np.real(np.vdot((mf_lm_new).T,hp.almxfl((mf_lm_new),1./Cl_new)))
     tt2_old = -1/2. *np.real(np.vdot((mf_lm_old).T,hp.almxfl((mf_lm_old),1./Cl_old)))
-    print "'mf like' = ",tt2_new-tt2_old
+    #print "'mf like' = ",tt2_new-tt2_old
     # "fluctuation part" of the likelihood
     tt3_new = -1/2. *np.real(np.vdot((fluc_lm_determ).T,hp.almxfl((fluc_lm_determ),1/nl*bl**2+1/Cl_new)))
     tt3_old = -1/2. *np.real(np.vdot((fluc_lm_GS).T,hp.almxfl((fluc_lm_GS),1/nl*bl**2+1/Cl_old)))
-    print "'fluc like' = ",tt3_new-tt3_old
+    #print "'fluc like' = ",tt3_new-tt3_old
     tt_new = tt1_new + tt2_new + tt3_new
     tt_old = tt1_old + tt2_old + tt3_old
     return tt_new,tt_old
@@ -327,7 +327,7 @@ def Step_MC(guess, *arg):
     arg[0] -- a target class object
     arg[1] -- Cl_old, fluc_lm_old
     """
-    #print guess, arg
+    ##print guess, arg
     dlm,strings,params,nl,bl = arg[0]
     Cl_old, fluc_lm_GS,mf_old = arg[1]
     dd = cb.update_dic(params,guess,strings)
@@ -336,8 +336,8 @@ def Step_MC(guess, *arg):
     Cl_new = cb.generate_spectrum(dd)[:lmax,1]
     # avoid dividing by 0
     Cl_new[:2] = 1.e-35
-    print "new = ",Cl_new[50]
-    print "old = ",Cl_old[50]
+    #print "new = ",Cl_new[50]
+    #print "old = ",Cl_old[50]
     # renormalization, i.e. lhs part of eq (24) and (25)
     renorm = CG.renorm_term(Cl_new,bl,nl)
     # generate mean field map using new PS
@@ -358,19 +358,19 @@ def diff_fixed_like(fluc_lm_determ,fluc_lm_GS,mf_lm_new,mf_lm_old,Cl_new,Cl_old,
     arg[0] -- a target class object
     arg[1] -- Cl_old, fluc_lm_old
     """
-    #print guess, arg
+    ##print guess, arg
     dlm,strings,params,nl,bl = arg[0]
     tt1_new = -1/2.*np.real(np.vdot((dlm-hp.almxfl(mf_lm_new,bl)).T,hp.almxfl((dlm-hp.almxfl(mf_lm_new,bl)),1/nl)))
     tt1_old = -1/2.*np.real(np.vdot((dlm-hp.almxfl(mf_lm_old,bl)).T,hp.almxfl((dlm-hp.almxfl(mf_lm_old,bl)),1/nl)))
-    print "chi**2 = ",tt1_new-tt1_old
+    #print "chi**2 = ",tt1_new-tt1_old
     # "mean field part" of the likelihood
     tt2_new = -1/2. *np.real(np.vdot((mf_lm_new).T,hp.almxfl((mf_lm_new),1./Cl_new)))
     tt2_old = -1/2. *np.real(np.vdot((mf_lm_old).T,hp.almxfl((mf_lm_old),1./Cl_old)))
-    print "'mf like' = ",tt2_new-tt2_old
+    #print "'mf like' = ",tt2_new-tt2_old
     # "fluctuation part" of the likelihood
     tt3_new = -1/2. *np.real(np.vdot((fluc_lm_determ).T,hp.almxfl((fluc_lm_determ),1/nl*bl**2)))
     tt3_old = -1/2. *np.real(np.vdot((fluc_lm_GS).T,hp.almxfl((fluc_lm_GS),1/nl*bl**2)))
-    print "'fluc like' = ",tt3_new-tt3_old
+    #print "'fluc like' = ",tt3_new-tt3_old
     tt_new = tt1_new + tt2_new + tt3_new
     tt_old = tt1_old + tt2_old + tt3_old
     return tt_new,tt_old
