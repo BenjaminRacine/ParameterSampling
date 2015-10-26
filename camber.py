@@ -2,6 +2,7 @@ import numpy as np
 import os
 import subprocess
 import sys
+
 try:
     from local_paths import *
 except:
@@ -73,8 +74,9 @@ def generate_spectrum(dic):
     Keyword Arguments:
     dic -- parameter dictionnary
     """
-    Pid = np.random.randint(0,10000)
+    Pid = np.random.randint(0,1000000)
     run_camb(dic,1,"tempopo%s.ini"%Pid)
+    #try:
     Cl = np.loadtxt("%s/%s_scalCls.dat"%(camb_dir,dic["output_root"]))
     # camb generates l(l+1)Cl/2/pi from lmin of 2 to lmax,
     # we want Cl from lmin = 0 for healpix : 
