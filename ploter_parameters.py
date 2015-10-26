@@ -5,7 +5,15 @@ from matplotlib.patches import Ellipse
 import MH_module as MH
 from matplotlib.legend_handler import HandlerPatch
 import tabulate as T
-import scipy
+import scipy.stats
+
+
+list_rules = list(T.LATEX_ESCAPE_RULES)
+for i in list_rules :
+    del(T.LATEX_ESCAPE_RULES[u'%s'%i])
+
+
+
 
 def determine_FD_binning(array_in):
     '''
@@ -147,7 +155,7 @@ def Triangle_plot_Cov_dat(guesses,flag,x_mean,Cov,titles,which_par,**kwargs):
         x1 = np.linspace(x_mean[i]- 5*np.sqrt(Cov[i,i]),x_mean[i] + 5*np.sqrt(Cov[i,i]),200)
         #sUtahtop
         ax_temp.plot(x1,np.exp(-0.5*(x1-x_mean[i])**2/Cov[i,i])/np.sqrt(2*np.pi*Cov[i,i]),"b")
-        ax_temp.hist(guesses[:,i][flag>0],np.sqrt(sum(flag>0)),histtype="step",normed=True,color='g')
+        ax_temp.hist(guesses[:,i][flag>0],np.round(np.sqrt(sum(flag>0))),histtype="step",normed=True,color='g')
         ax_temp.set_title(titles[which_par[i]],y=1.25)
         ax_temp.set_xlim(x1.min(),x1.max())
         for j in range(i+1,nb_param):
@@ -304,9 +312,10 @@ def plot_all(chain,titles,which_par,x_mean,Cov,burnin_cut=50,save=0,plot_int = 0
     guesses = guesses.reshape(len(guesses)/len(which_par),len(which_par))
     #Cls = np.concatenate(Cls)
     #Cls = Cls.reshape(len(Cls)/2,2)
-    Cls=Cls[flag!=-2]
-    like=like[flag!=-2]
-    flag=flag[flag!=-2]
+    Cls=np.array(Cls)[flag>-2]
+    like=like[flag>-2]
+    guesses = guesses[flag>-2]
+    flag=flag[flag>-2]
     chains = real_chain(guesses,flag)
     plot_autocorr(chains,np.ones(len(flag)),titles,which_par,burnin_cut,1000,save)
     plot_chains(guesses,flag,chains,titles,which_par,x_mean,Cov,save)
@@ -322,7 +331,9 @@ def real_chain(guesses,flag):
     fills the guesses where rejected with previous accepted value
     """
     guesse_new = guesses.copy()
+    print "in    ",guesse_new.shape
     accep_idx = np.where(flag>0)[0]
+    accep_idx.shape
     for i in range(len(accep_idx)-1):
         for j in range(accep_idx[i],accep_idx[i+1]):
             guesse_new[j] = guesse_new[accep_idx[i]]
@@ -335,21 +346,23 @@ def create_real_chain(MCMC_output):
     Return a clean chain, ie: the guesses where rejected with previous accepted value, from the output of the code
     """
     guesses,flag,like,Cls = MCMC_output
+    N_par = len(guesses[0])
     guesses = np.concatenate(guesses)
-    guesses = guesses.reshape(len(guesses)/6.,6)
-
-    Cls=Cls[flag!=-2]
-    like=like[flag!=-2]
-    flag=flag[flag!=-2]
+    guesses = guesses.reshape(len(guesses)/N_par,N_par)
+    Cls=np.array(Cls)[flag>-2]
+    like=like[flag>-2]
+    guesses = guesses[flag>-2]
+    flag=flag[flag>-2]
     chains = real_chain(guesses,flag)
     return chains
 
-def compare_chains(chain1,chain2,save = 0,burnin_cut = [200,200],titles = np.array(["$\Omega_b h^2$","$\Omega_c h^2$",r"$\tau$","$A_s$","$n_s$","$H_0$"]),lab = ["chain 1","chain 2"]):
+def compare_chains(chain1,chain2,save = 0,burnin_cut = [200,200],titles = np.array(["$\Omega_b h^2$","$\Omega_c h^2$",r"$\tau$","$A_s$","$n_s$","$H_0$"]),lab = ["chain 1","chain 2"],format_table = "latex"):
     chain_1 = create_real_chain(chain1)[burnin_cut[0]:,:]
     chain_2 = create_real_chain(chain2)[burnin_cut[1]:,:]
-    bin_1 = np.sqrt(np.shape(chain_1)[0])
-    bin_2 = np.sqrt(np.shape(chain_2)[0])
-    for i in range(6):
+    N_par = np.shape(chain_1)[1]
+    bin_1 = np.round(np.sqrt(np.shape(chain_1)[0]))
+    bin_2 = np.round(np.sqrt(np.shape(chain_2)[0]))
+    for i in range(N_par):
         plt.subplot(3,2,i+1)
         his_1 = plt.hist(chain_1[:,i],bin_1,histtype='step',normed=True,label = lab[0],alpha=0.5,color="g")
         his_2 = plt.hist(chain_2[:,i],bin_2,histtype='step',normed=True,label = lab[1],alpha=0.5,color="b")
@@ -358,7 +371,7 @@ def compare_chains(chain1,chain2,save = 0,burnin_cut = [200,200],titles = np.arr
         if save!=0:
             plt.savefig("plots/Marginal_1D_lin_burn%d_%s.png"%(burnin_cut,save))
     plt.figure()
-    for i in range(6):
+    for i in range(N_par):
         plt.subplot(3,2,i+1)
         his_1 = plt.hist(chain_1[:,i],bin_1,histtype='step',normed=True,label = lab[0],alpha=0.5,log=True,color='g')
         his_2 = plt.hist(chain_2[:,i],bin_2,histtype='step',normed=True,label = lab[1],alpha=0.5,log=True,color='b')
@@ -367,7 +380,7 @@ def compare_chains(chain1,chain2,save = 0,burnin_cut = [200,200],titles = np.arr
         if save!=0:
             plt.savefig("plots/Marginal_1D_log_burn%d_%s.png"%(burnin_cut,save))
     plt.figure()
-    for i in range(6):
+    for i in range(N_par):
         plt.subplot(3,2,i+1)
         plt.plot(chain_1[:,i],label = lab[0],alpha=0.5,color="g")
         plt.plot(chain_2[:,i],label = lab[1],alpha=0.5,color="b")
@@ -378,7 +391,7 @@ def compare_chains(chain1,chain2,save = 0,burnin_cut = [200,200],titles = np.arr
         if save!=0:
             plt.savefig("plots/Trace_plot_burn%d_%s.png"%(burnin_cut,save))
     plt.figure()
-    for i in range(6):
+    for i in range(N_par):
         plt.subplot(3,2,i+1)
         plt.plot(chain_1[:1000,i],label = lab[0],alpha=0.5,color="g")
         plt.plot(chain_2[:1000,i],label = lab[1],alpha=0.5,color="b")
@@ -404,7 +417,7 @@ def compare_chains(chain1,chain2,save = 0,burnin_cut = [200,200],titles = np.arr
     kurt_1 = ["kurt : %s"%lab[0]]
     kurt_2 = ["kurt : %s"%lab[1]]
     ratios = ["std : %s/%s"%(lab[0],lab[1])]
-    for i in range(6):
+    for i in range(N_par):
         header.append(titles[i])
         mean_1.append(chain_1[:,i].mean())
         mean_2.append(chain_2[:,i].mean())
@@ -416,6 +429,10 @@ def compare_chains(chain1,chain2,save = 0,burnin_cut = [200,200],titles = np.arr
         kurt_2.append(scipy.stats.kurtosis(chain_2[:,i]))
         ratios.append(chain_1[:,i].std()/chain_2[:,i].std())
         table = [mean_1,mean_2,std_1,std_2,ratios,skewness_1,skewness_2,kurt_1,kurt_2]
-    print T.tabulate(table, header,tablefmt="pipe")
+    print T.tabulate(table, header,tablefmt=format_table)
+
+
+
+
 
 
