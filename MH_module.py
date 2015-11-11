@@ -2,6 +2,8 @@ import numpy as np
 from matplotlib import pyplot as plt
 import sys
 
+
+
 def Equation_ap(x,A,b):
     """
     returns Ax-b
@@ -63,7 +65,7 @@ def autocorr(x):
 
 
 
-def MCMC_log(guess,functional_form,proposal,proposal_fun,niter,priors_func,*arg):
+def MCMC_log(guess,functional_form,proposal,proposal_fun,niter,priors_func,firstiter,seed, *arg):
     """
     Same as previous, but for log likelihood
 
@@ -79,12 +81,13 @@ def MCMC_log(guess,functional_form,proposal,proposal_fun,niter,priors_func,*arg)
     *arg[2] for the priors
     It can be for example *arg = [A,x],[],[0,1/0.5**2]
     """
-    Pid = np.random.randint(0,10000)
+    Pid = np.random.randint(0,100000)
     #print "Pid = %d"%Pid
     #print "priors= ",arg[2]
     failed = []
-    i=0
     f_old,Cl = functional_form(guess,*arg[0])
+    f_old += sum(priors_func(guess,*arg[2]))
+    print f_old
     guesses = []
     guesses.append(guess)
     flag = []
@@ -94,9 +97,18 @@ def MCMC_log(guess,functional_form,proposal,proposal_fun,niter,priors_func,*arg)
     like=[]
     like.append(f_old)
     failed = 0
-    while i<niter:
+    state_rand=[]
+    if firstiter==0:
+        pass
+    else:
+        np.random.set_state(seed)
+        print seed[0]
+    for i in xrange(firstiter+1, niter+1):
         #print i
-        try:
+        try:#if 0==0:  
+            #if i%500==0:
+            #    print i, np.random.random()   
+            #print i
             guess_new = guess + proposal(*arg[1])
             guesses.append(guess_new)
             if np.min(guess_new)<0:
@@ -126,13 +138,14 @@ def MCMC_log(guess,functional_form,proposal,proposal_fun,niter,priors_func,*arg)
                     else:
                         flag.append(0)
                         pass
-            i+=1
-
-            if i%1000==0:
+            if i%10000==0:
                 flag_temp = np.array(flag)
                 print i, " %.2f rejected; %.2f accepted; %.2f Lucky accepted; %d negative: try removed"%(len(np.where(flag_temp==0)[0])/float(i),len(np.where(flag_temp==1)[0])/float(i),len(np.where(flag_temp==2)[0])/float(i),len(np.where(flag_temp==-1)[0]))
-                if i%1000==0:
-                    np.save("tempo_MC_chain_%d.npy"%Pid,[guesses,np.array(flag),np.array(like),Cls])
+                #print guess,f_old
+                if i%10000==0:
+                    state_rand.append(np.random.get_state())
+                    #print np.random.random()
+                    np.save("outputs/tempo_MC_chain_%d.npy"%Pid,[guesses,np.array(flag),np.array(like),Cls,state_rand])
                     print "temporary file saved: %d"%Pid
         except:
             failed+=1
@@ -141,8 +154,8 @@ def MCMC_log(guess,functional_form,proposal,proposal_fun,niter,priors_func,*arg)
             like.append(-2)
             Cls.append(np.zeros(len(Cl)))
             #plt.draw()
-    #print "%d fails"%failed
-    return guesses,np.array(flag),np.array(like),Cls
+    print "%d fails"%failed
+    return guesses,np.array(flag),np.array(like),Cls,state_rand
 
 
 
@@ -150,7 +163,7 @@ def MCMC_log(guess,functional_form,proposal,proposal_fun,niter,priors_func,*arg)
 
 
 
-def MCMC_log_Jeff_new(guess,functional_form,proposal,proposal_fun,niter,priors_func,*arg):
+def MCMC_log_Jeff_new(guess,functional_form,proposal,proposal_fun,niter,priors_func,firstiter,seed,*arg):
     """
     Same as previous, but for log likelihood
 
@@ -167,13 +180,9 @@ def MCMC_log_Jeff_new(guess,functional_form,proposal,proposal_fun,niter,priors_f
     It can be for example *arg = [A,x],[],[0,1/0.5**2]
     """
     Pid = np.random.randint(0,1e6)
-    seeds= []
-    seed_=Pid
-    #seeds.append(seed_)
     #print "Pid = %d"%Pid
     #print "priors= ",arg[2]
     failed = []
-    i=0
     guesses = []
     #guesses.append(guess)
     priors_old = sum(priors_func(guess,*arg[2]))
@@ -184,13 +193,16 @@ def MCMC_log_Jeff_new(guess,functional_form,proposal,proposal_fun,niter,priors_f
     like=[]
     #like.append(f_old)
     failed = 0
-    while i<niter:
+    state_rand=[]
+    if firstiter==0:
+        pass
+    else:
+        np.random.set_state(seed)
+    for i in xrange(firstiter,niter):
         #print i
-        try:
-            np.random.seed(seed_)
+        try:#if 0==0:
+            #print i
             guess_new = guess + proposal(*arg[1])
-            seed_=np.random.randint(0,1e9)
-            seeds.append(seed_)
             guesses.append(guess_new)  
             if np.min(guess_new)<0:
                 #print "Negative param ! ",guess_new
@@ -220,12 +232,12 @@ def MCMC_log_Jeff_new(guess,functional_form,proposal,proposal_fun,niter,priors_f
                     else:
                         flag.append(0)
                         pass
-            i+=1
-            if i%1000==0:
+            if i%10000==0:
+                state_rand.append(np.random.get_state())                    
                 flag_temp = np.array(flag)
                 #print "%.2f rejected; %.2f accepted; %.2f Lucky accepted; %d negative: try removed"%(len(np.where(flag_temp==0)[0])/float(i),len(np.where(flag_temp==1)[0])/float(i),len(np.where(flag_temp==2)[0])/float(i),len(np.where(flag_temp==-1)[0]))
-                if i%1000==0:
-                    np.save("tempo_MC_chain_%d.npy"%Pid,[guesses,np.array(flag),np.array(like),Cls,seeds])
+                if i%10000==0:
+                    np.save("outputs/tempo_MC_chain_%d.npy"%Pid,[guesses,np.array(flag),np.array(like),Cls,state_rand])
                     print i, " temporary file saved: %d"%Pid
         except:
             failed+=1
@@ -233,8 +245,105 @@ def MCMC_log_Jeff_new(guess,functional_form,proposal,proposal_fun,niter,priors_f
             flag.append(-2)
             like.append(-2)
             Cls.append(np.zeros(len(Cl_new)))
-            seeds.append(0)
             #plt.draw()
     print "%d fails"%failed
-    return guesses,np.array(flag),np.array(like),Cls,seeds
+    return guesses,np.array(flag),np.array(like),Cls,state_rand
 
+
+
+
+
+
+
+
+
+
+def MCMC_log_Jeff_new_1D(guess,functional_form,proposal,proposal_fun,niter,priors_func,firstiter,seed,*arg):
+    """
+    Same as previous, but for log likelihood
+
+    Keyword Arguments:
+    guess -- initial guess vector (np.array)
+    functional_form -- form you are trying to sample
+    proposal -- proposal random generator for next step
+    proposal_fun -- proposal function to calculate ratios (next version should have both proposal and proposal_fun in one go)
+    niter -- number of iterations
+    *arg -- arguments that could be used by the functional form, and the proposal: 
+    *arg[0] for the functional, arg[0][0] = [dlm,strings,dd,nl[:lmax+1],bl[:lmax+1]],arg[0][1] = [fluc,cl]
+    *arg[1] for the proposal. 
+    *arg[2] for the priors
+    It can be for example *arg = [A,x],[],[0,1/0.5**2]
+    """
+    Pid = np.random.randint(0,1e6)
+    #print "Pid = %d"%Pid
+    #print "priors= ",arg[2]
+    failed = []
+    guesses = []
+    #guesses.append(guess)
+    priors_old = sum(priors_func(guess,*arg[2]))
+    flag = []
+    #flag.append(-3)
+    Cls=[]
+    #Cls.append(Cl_old)
+    like=[]
+    #like.append(f_old)
+    failed = 0
+    state_rand=[]
+    grid_1D = np.linspace(3.0,3.6,100)
+    if firstiter==0:
+        pass
+    else:
+        np.random.set_state(seed)
+    for i in xrange(firstiter,niter):
+        #print i
+        if 0==0:
+            guess_new = [grid_1D[i]]
+            guesses.append(guess_new)  
+            if np.min(guess_new)<0:
+                #print "Negative param ! ",guess_new
+                flag.append(-1)
+                like.append(-1)
+                Cls.append(np.zeros(len(Cl_new)))
+            else:
+                likes, Cl_new, fluc_lm_GS_next, mf_lm_new = functional_form(guess_new,*arg[0])
+                Cls.append(Cl_new)
+                priors_new = sum(priors_func(guess_new,*arg[2]))
+                like.append(likes[0] - likes[1] + priors_new - priors_old)#likes[0])
+                A = min(0,likes[0] - likes[1] + priors_new - priors_old)#+proposal_fun(guess,guess_new,*arg[1])-proposal_fun(guess_new,guess,*arg[1]))
+                #print A,"new = ",likes[0],"old = ",likes[1], "guess_new = ", guess_new, "guess_old = ",guess
+                if A==0:
+                    guess=guess_new
+                    flag.append(1)
+                    arg[0][1] =  [Cl_new, fluc_lm_GS_next,mf_lm_new]
+                    priors_old = priors_new
+                elif A<0:
+                    u = np.log(np.random.rand(1))
+                    #print "u = ",u
+                    if u <= A:
+                        guess=guess_new
+                        flag.append(2)
+                        arg[0][1] =  [Cl_new, fluc_lm_GS_next,mf_lm_new]
+                        priors_old = priors_new                        
+                    else:
+                        flag.append(0)
+                        guess=guess_new
+                        #flag.append(2)
+                        arg[0][1] =  [Cl_new, fluc_lm_GS_next,mf_lm_new]
+                        priors_old = priors_new
+                        pass
+            if i%10000==0:
+                state_rand.append(np.random.get_state())                    
+                flag_temp = np.array(flag)
+                #print "%.2f rejected; %.2f accepted; %.2f Lucky accepted; %d negative: try removed"%(len(np.where(flag_temp==0)[0])/float(i),len(np.where(flag_temp==1)[0])/float(i),len(np.where(flag_temp==2)[0])/float(i),len(np.where(flag_temp==-1)[0]))
+                if i%10000==0:
+                    np.save("outputs/tempo_MC_chain_1D_%d.npy"%Pid,[guesses,np.array(flag),np.array(like),Cls,state_rand])
+                    print i, " temporary file saved: %d"%Pid
+        #except:
+        #    failed+=1
+        #    print i," error: %s on line %s"%(sys.exc_info()[0],sys.exc_info()[-1].tb_lineno)
+        #    flag.append(-2)
+        #    like.append(-2)
+        #    Cls.append(np.zeros(len(Cl_new)))
+            #plt.draw()
+    #print "%d fails"%failed
+    return guesses,np.array(flag),np.array(like),Cls,state_rand
