@@ -372,7 +372,7 @@ def compare_chains(chain1,chain2,save = 0,burnin_cut = [200,200],titles = np.arr
         plt.title(titles[i])
         plt.tight_layout()
         if save!=0:
-            plt.savefig("plots/Marginal_1D_lin_burn%d_%s.png"%(burnin_cut,save))
+            plt.savefig("plots/Marginal_1D_lin_%s.png"%(save))
     plt.figure()
     for i in range(N_par):
         plt.subplot(3,2,i+1)
@@ -381,7 +381,7 @@ def compare_chains(chain1,chain2,save = 0,burnin_cut = [200,200],titles = np.arr
         plt.title(titles[i])
         plt.tight_layout()
         if save!=0:
-            plt.savefig("plots/Marginal_1D_log_burn%d_%s.png"%(burnin_cut,save))
+            plt.savefig("plots/Marginal_1D_log_%s.png"%(save))
     plt.figure()
     for i in range(N_par):
         plt.subplot(3,2,i+1)
@@ -392,7 +392,7 @@ def compare_chains(chain1,chain2,save = 0,burnin_cut = [200,200],titles = np.arr
         plt.locator_params(nbins=4)
         plt.xlim(0,100000)
         if save!=0:
-            plt.savefig("plots/Trace_plot_burn%d_%s.png"%(burnin_cut,save))
+            plt.savefig("plots/Trace_plot_%s.png"%(save))
     plt.figure()
     for i in range(N_par):
         plt.subplot(3,2,i+1)
@@ -401,7 +401,7 @@ def compare_chains(chain1,chain2,save = 0,burnin_cut = [200,200],titles = np.arr
         plt.title(titles[i])
         plt.tight_layout()
         if save!=0:
-            plt.savefig("plots/Trace_plot_zoom_burn%d_%s.png"%(burnin_cut,save))
+            plt.savefig("plots/Trace_plot_zoom_%s.png"%(save))
     plt.figure()
     handle_1, = plt.plot(chain_1[:,i],label = lab[0],alpha=0.5,color="g")
     handle_2, = plt.plot(chain_2[:,i],label = lab[1],alpha=0.5,color="b")
@@ -439,3 +439,23 @@ def compare_chains(chain1,chain2,save = 0,burnin_cut = [200,200],titles = np.arr
 
 
 
+def merge(list_file, cut_burn):
+    '''
+    list_file : list of temporary or full files eg : ['outputs/test1.npy','test2.npy']
+    cut_burn  : burn-in cut applied to each file
+    '''
+    G = []
+    F = []
+    L = []
+    C = []
+    for file_name in list_file : 
+        file_ = np.load(file_name)
+        G.append(np.array(file_[0])[cut_burn:,:])
+        F.append(np.array(file_[1])[cut_burn:])
+        L.append(np.array(file_[2])[cut_burn:])
+        C.append(np.array(file_[3])[cut_burn:])
+    G = np.concatenate(G)
+    F = np.concatenate(F)
+    L= np.concatenate(L)
+    C = np.concatenate(C)
+    return [G,F,L,C]
