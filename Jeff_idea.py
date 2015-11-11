@@ -5,7 +5,7 @@ import healpy as hp
 import CG_functions as CG
 import MH_module as MH
 
-
+global index_pos
 
 
 class target_obj:
@@ -139,7 +139,9 @@ def functional_form_params_n(x,*arg):
     strings = arg[1]
     params = arg[2].copy()
     noise = arg[3]
-    beam = arg[4]
+    beam = arg[4]    
+    Cl_old = arg[5]
+    lmax = len(Cl_old)-1
     #params["output_root"] = '../Codes/CG_git/MH_MCMC/camb_ini/test%d'%np.random.randint(100)
     for i in range(np.size(x)):
         ##print strings[i]
@@ -150,11 +152,11 @@ def functional_form_params_n(x,*arg):
         else:
             params[strings[i]]=x[i]
     Cl = cb.generate_spectrum(params)
-    lmax = Cl.shape[0]
-    tt = np.real(np.vdot(dlm.T,hp.almxfl(dlm,1/(beam[:lmax]**2*Cl[:,1]+noise[:lmax]))))
+    #lmax = Cl.shape[0]-1
+    tt = -1./2 * np.real(np.vdot(CG.complex2real_alm(dlm.T),CG.complex2real_alm(hp.almxfl(dlm,1/(beam[:lmax+1]**2*Cl[:lmax+1,1]+noise[:lmax+1])))))    
     #determinant is the product of the diagonal element: in log:
-    tt = -1/2. * tt  - 1./2 *(np.arange(1,lmax+1)*np.log(noise[:lmax]+Cl[:,1]*beam[:lmax]**2)).sum()
-    return tt,Cl[:,1]
+    tt2 =  - 1./2 *((2*np.arange(2,lmax+1)+1)*np.log(noise[2:lmax+1]+Cl[2:lmax+1,1]*beam[2:lmax+1]**2)).sum()
+    return tt+tt2,Cl[:,1]
 
 
 
@@ -360,16 +362,16 @@ def diff_fixed_like(fluc_lm_determ,fluc_lm_GS,mf_lm_new,mf_lm_old,Cl_new,Cl_old,
     """
     ##print guess, arg
     dlm,strings,params,nl,bl = arg[0]
-    tt1_new = -1/2.*np.real(np.vdot((dlm-hp.almxfl(mf_lm_new,bl)).T,hp.almxfl((dlm-hp.almxfl(mf_lm_new,bl)),1/nl)))
-    tt1_old = -1/2.*np.real(np.vdot((dlm-hp.almxfl(mf_lm_old,bl)).T,hp.almxfl((dlm-hp.almxfl(mf_lm_old,bl)),1/nl)))
+    tt1_new = -1/2.*np.real(np.vdot(CG.complex2real_alm(dlm-hp.almxfl(mf_lm_new,bl).T),CG.complex2real_alm(hp.almxfl((dlm-hp.almxfl(mf_lm_new,bl)),1/nl))))
+    tt1_old = -1/2.*np.real(np.vdot(CG.complex2real_alm(dlm-hp.almxfl(mf_lm_old,bl).T),CG.complex2real_alm(hp.almxfl((dlm-hp.almxfl(mf_lm_old,bl)),1/nl))))
     #print "chi**2 = ",tt1_new-tt1_old
     # "mean field part" of the likelihood
-    tt2_new = -1/2. *np.real(np.vdot((mf_lm_new).T,hp.almxfl((mf_lm_new),1./Cl_new)))
-    tt2_old = -1/2. *np.real(np.vdot((mf_lm_old).T,hp.almxfl((mf_lm_old),1./Cl_old)))
+    tt2_new = -1/2. *np.real(np.vdot(CG.complex2real_alm(mf_lm_new.T),CG.complex2real_alm(hp.almxfl((mf_lm_new),1./Cl_new))))
+    tt2_old = -1/2. *np.real(np.vdot(CG.complex2real_alm(mf_lm_old.T),CG.complex2real_alm(hp.almxfl((mf_lm_old),1./Cl_old))))
     #print "'mf like' = ",tt2_new-tt2_old
     # "fluctuation part" of the likelihood
-    tt3_new = -1/2. *np.real(np.vdot((fluc_lm_determ).T,hp.almxfl((fluc_lm_determ),1/nl*bl**2)))
-    tt3_old = -1/2. *np.real(np.vdot((fluc_lm_GS).T,hp.almxfl((fluc_lm_GS),1/nl*bl**2)))
+    tt3_new = -1/2. *np.real(np.vdot(CG.complex2real_alm(fluc_lm_determ.T),CG.complex2real_alm(hp.almxfl((fluc_lm_determ),1/nl*bl**2))))  
+    tt3_old = -1/2. *np.real(np.vdot(CG.complex2real_alm(fluc_lm_GS.T),CG.complex2real_alm(hp.almxfl((fluc_lm_GS),1/nl*bl**2))))
     #print "'fluc like' = ",tt3_new-tt3_old
     tt_new = tt1_new + tt2_new + tt3_new
     tt_old = tt1_old + tt2_old + tt3_old
