@@ -3,6 +3,8 @@ import healpy as hp
 import itertools
 from matplotlib import pyplot as plt
 
+global index_pos
+#index_pos = np.array(list(itertools.chain.from_iterable([[hp.Alm.getidx(lmax, l, m) for m in range(1,l+1)] for l in range(lmax+1)])))
 
 def gaussian_beam(lmax, fwhm):
    """
@@ -32,9 +34,17 @@ def complex2real_alm(alm):
     """
     To be finished: compute the real a_lm
     """
+    ##### The bottleneck here is to compute the double for loop for the indices. We define it as global here so that it's defined once and for all.
+    global index_pos
     lmax = hp.Alm.getlmax(alm.size)
     alm_temp = np.zeros((lmax+1)**2)
-    index_pos = np.array(list(itertools.chain.from_iterable([[hp.Alm.getidx(lmax, l, m) for m in range(1,l+1)] for l in range(lmax+1)])))
+    try: 
+       index_pos
+       #print "yes"
+    except: 
+       print lmax
+       index_pos = np.array(list(itertools.chain.from_iterable([[hp.Alm.getidx(lmax, l, m) for m in range(1,l+1)] for l in range(lmax+1)])))
+       #print "no"
     index_0 = [hp.Alm.getidx(lmax, l, 0) for l in range(lmax+1)]
     alm_temp[index_0] = np.real(alm[index_0])
     alm_temp[lmax+1+2*(index_pos-lmax-1)] = np.sqrt(2)*np.real(alm[index_pos])
@@ -277,18 +287,25 @@ def generate_w1term(Cl,bl,nl):
     """
     
     """
-    lmax = np.size(Cl) 
-    w1 = hp.synalm(np.ones(lmax))
+    lmax = np.size(Cl) -1
+    onesl = np.ones(lmax+1)
+    onesl[:2]=0
+    w1 = hp.synalm(onesl)
+    #### make sure no mono- and dipole
     #w1 = 1/np.sqrt(2)*(np.random.randn(hp.Alm.getsize(lmax)) + 1j*np.random.randn(hp.Alm.getsize(lmax)))
-    out = hp.almxfl(w1,np.sqrt(Cl/nl)*bl)
+    out = hp.almxfl(w1,np.sqrt(Cl[:lmax+1]/nl[:lmax+1])*bl[:lmax+1])
     return out
 
 def generate_w0term(Cl):
     """
     
     """
-    lmax = np.size(Cl) 
-    w0 = hp.synalm(np.ones(lmax))#1/np.sqrt(2)*(np.random.randn(hp.Alm.getsize(lmax)) + 1j*np.random.randn(hp.Alm.getsize(lmax)))
+    lmax = np.size(Cl)-1
+    onesl = np.ones(lmax+1)
+    onesl[:2]=0
+    #### make sure no mono- and dipole
+    w0 = hp.synalm(onesl)
+    #w0 = hp.synalm(np.ones(lmax))#1/np.sqrt(2)*(np.random.randn(hp.Alm.getsize(lmax)) + 1j*np.random.randn(hp.Alm.getsize(lmax)))
     return w0
 
 
@@ -296,15 +313,15 @@ def generate_mfterm(dlm,Cl,bl,nl):
     """
     
     """
-    lmax = np.size(Cl) 
-    out = hp.almxfl(dlm,np.sqrt(Cl)*bl/nl)
+    lmax = np.size(Cl)-1
+    out = hp.almxfl(dlm,np.sqrt(Cl[:lmax+1])*bl[:lmax+1]/nl[:lmax+1])
     return out
 
 def renorm_term(Cl,bl,nl):
     """
     
     """
-    lmax = np.size(Cl) 
-    return np.sqrt(Cl[:lmax])/(1+Cl[:lmax]*bl[:lmax]**2/(nl[:lmax]))
+    lmax = np.size(Cl)-1 
+    return np.sqrt(Cl[:lmax+1])/(1+Cl[:lmax+1]*bl[:lmax+1]**2/(nl[:lmax+1]))
     
    
