@@ -9,19 +9,21 @@ import MH_module as MH
 import PS2param_module as PS2P
 import Jeff_idea as JJi
 import multiprocessing
-
+import itertools
 # submit as python MCMC_main_script.py method N_proc
 # where Method = "new" or "exact"
 #N_proc = 
 N_proc_tot = multiprocessing.cpu_count()
 print "number of available proc: %d"%N_proc_tot
 
-nside = 2048
-lmax=2200
+nside = 2048#128
+lmax= 2200#2200
 generate_new_data = 0
 
 #method = sys.argv[1]
-
+#define global variable that will be used in the complex2real function: Nasty... 
+global index_pos
+index_pos = np.array(list(itertools.chain.from_iterable([[hp.Alm.getidx(lmax, l, m) for m in range(1,l+1)] for l in range(lmax+1)])))
 
 try:
     from local_paths import *
@@ -79,9 +81,14 @@ if generate_new_data==1:
 
 else:
     dlm =np.load("Dataset_planck2015_175eminus4_whitenoise_7arcmin.npy")
+    #dlm =np.load("Dataset_planck2015__175eminus4_7arcmin_128_200.npy")
     print "dataset read"
-#################################################
 
+dlm = CG.filter_alm(dlm,lmax)
+#################################################
+dlm[[hp.Alm.getidx(lmax,0,0),hp.Alm.getidx(lmax,1,0),hp.Alm.getidx(lmax,1,1)]]=0
+nl = nl[:lmax+1]
+bl=bl[:lmax+1]
 
 # Could be used for asymetric proposal, but now only for first guess
 x_mean = np.array([0.02222,0.1197,0.078,3.089,0.9655,67.31])
@@ -101,19 +108,17 @@ priors_invvar = np.array([0,0,1/0.02**2,0,0,0])
 
 #################################################
 
-def run_MCMC_new(which_par,niter,save_title, renorm_var,save_path = "outputs"):
+
+
+def run_MCMC_new(which_par,niter,save_title, renorm_var,firstiter=0,seed="none",guess = "random"):
     """
-    Functions that runs the MCMC for a given set of parameters for the new method
+    Functions that runs the MCMC for a given set of parameters
 
     Keyword Arguments:
-    which_par -- a list of indices, corresponding to the order defined above, exemple [0,2] means ombh2,tau if order is [ombh2,omch2,tau,As,ns,H0]
+    which_par -- a list of indices, corresponding to the order defined above, exemple [0,2] means ombh2,tau if order is [ombh2,omch2,t
+au,As,ns,H0]
     niter -- number of iterations in MCMC
-    save_title -- string to distinguish saved outputs
     renorm_var -- factor multipling the variance, to play around for better acceptance rate.
-    save_path -- path to put the outputs
-
-    returns a list of arguments: [guess,flags,likelihood value,Cls]
-    can then be plotted and formatted using ploter_parameters.py
     """
     cov_new_temp = cov_new[which_par,:][:,which_par] * renorm_var
     string_temp = strings[which_par]
@@ -123,36 +128,36 @@ def run_MCMC_new(which_par,niter,save_title, renorm_var,save_path = "outputs"):
     priors_invvar_temp = priors_invvar[which_par]
     print titles_temp
     # generate first guess parameters
-    guess_param = PS2P.prop_dist_form_params(x_mean_temp,cov_new_temp)
+    if guess=="random":
+        guess_param = PS2P.prop_dist_form_params(x_mean_temp,cov_new_temp)
+    else :
+        guess_param = guess
     print "initial guess = ", guess_param
     # generate first fluctuation map
-    dd2 = cb.update_dic(dd,guess_param,string_temp)
-    cl = cb.generate_spectrum(dd2)[:,1]
+    dd2 = cb.update_dic(dd,x_mean_temp,string_temp)
+    cl = cb.generate_spectrum(dd2)[:lmax+1,1]
     cl[:2] = 1.e-35
     renorm = CG.renorm_term(cl,bl,nl)
     fluc = hp.almxfl(CG.generate_w1term(cl[:lmax+1],bl[:lmax+1],nl[:lmax+1]) + CG.generate_w0term(cl[:lmax+1]),renorm)
     mf = hp.almxfl(CG.generate_mfterm(dlm,cl[:lmax+1],bl[:lmax+1],nl[:lmax+1]),renorm)
     # the core of the MCMC
-    testss = np.array(MH.MCMC_log_Jeff_new(guess_param, JJi.target_new,PS2P.prop_dist_form_params, PS2P.prop_func_form_params,niter,PS2P.Gaussian_priors_func,[[dlm,string_temp,dd,nl[:lmax+1],bl[:lmax+1]],[cl[:lmax+1],fluc,mf]],[x_mean_temp*0,np.matrix(cov_new_temp)],[priors_central_temp,priors_invvar_temp]))
-    np.save("%s/chain_%s_%s_%d_%d.npy"%(save_path,save_title,str(which_par).replace(',','').replace('[','').replace(']','').replace(' ',''),np.random.randint(0,100000),niter),testss)
+    tt1 = time.time()
+    testss = np.array(MH.MCMC_log_Jeff_new(guess_param, JJi.target_new,PS2P.prop_dist_form_params, PS2P.prop_func_form_params,niter,PS2P.Gaussian_priors_func,firstiter,seed,[[dlm,string_temp,dd,nl[:lmax+1],bl[:lmax+1]],[cl[:lmax+1],fluc,mf]],[x_mean_temp*0,np.matrix(cov_new_temp)],[priors_central_temp,priors_invvar_temp]))
+    print time.time() - tt1
+    np.save("outputs/chain_%s_%s_%d_%d.npy"%(save_title,str(which_par).replace(',','').replace('[','').replace(']','').replace(' ',''),np.random.randint(0,100000),niter),testss)
     return testss
 
 
 
 
-def run_MCMC(which_par,niter,save_title, renorm_var,save_path="outputs"):
+def run_MCMC_ex(which_par,niter,save_title, renorm_var,firstiter=0,seed="none",guess="random"):
     """
-    Functions that runs the MCMC output for a given set of parameters, for the 'exact' case.
+    Functions that runs the MCMC for a given set of parameters
 
     Keyword Arguments:
     which_par -- a list of indices, corresponding to the order defined above, exemple [0,2] means ombh2,tau if order is [ombh2,omch2,tau,As,ns,H0]
     niter -- number of iterations in MCMC
-    save_title -- string to distinguish saved outputs
     renorm_var -- factor multipling the variance, to play around for better acceptance rate.
-    save_path -- path to put the outputs
-
-    returns a list of arguments: [guess,flags,likelihood value,Cls]
-    can then be plotted and formatted using ploter_parameters.py
     """
     cov_new_temp = cov_new[which_par,:][:,which_par] * renorm_var
     string_temp = strings[which_par]
@@ -161,10 +166,17 @@ def run_MCMC(which_par,niter,save_title, renorm_var,save_path="outputs"):
     priors_central_temp = priors_central[which_par]
     priors_invvar_temp = priors_invvar[which_par]
     print titles_temp
-    guess_param = PS2P.prop_dist_form_params(x_mean_temp,cov_new_temp)
-    testss = np.array(MH.MCMC_log(guess_param, PS2P.functional_form_params_n,PS2P.prop_dist_form_params, PS2P.prop_func_form_params,niter,PS2P.Gaussian_priors_func,[dlm,string_temp,dd,nl,bl],[x_mean_temp*0,np.matrix(cov_new_temp)],[priors_central_temp,priors_invvar_temp]))
-    #print "%.2f rejected; %.2f accepted; %.2f Lucky accepted"%((flag==0).mean(),(flag==1).mean(),(flag==2).mean())
-    np.save("%s/chain_%s_%s_%d_%d.npy"%(save_path,save_title,str(which_par).replace(',','').replace('[','').replace(']','').replace(' ',''),np.random.randint(0,100000),niter),testss)
+    dd2 = cb.update_dic(dd,x_mean_temp,string_temp)
+    cl = cb.generate_spectrum(dd2)[:lmax+1,1]
+    cl[:2] = 1.e-35
+    if guess=="random":
+        guess_param = PS2P.prop_dist_form_params(x_mean_temp,cov_new_temp)
+    else :
+        guess_param = guess
+    tt1 = time.time()
+    testss = np.array(MH.MCMC_log(guess_param, JJi.functional_form_params_n,PS2P.prop_dist_form_params, PS2P.prop_func_form_params,niter,PS2P.Gaussian_priors_func,firstiter,seed,[dlm,string_temp,dd,nl,bl,cl],[x_mean_temp*0,np.matrix(cov_new_temp)],[priors_central_temp,priors_invvar_temp]))
+    print time.time() - tt1
+    np.save("outputs/chain_%s_%s_%d_%d.npy"%(save_title,str(which_par).replace(',','').replace('[','').replace(']','').replace(' ',''),np.random.randint(0,100000),niter),testss)
     return testss
 
 
