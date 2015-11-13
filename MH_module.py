@@ -145,7 +145,7 @@ def MCMC_log(guess,functional_form,proposal,proposal_fun,niter,priors_func,first
                 if i%10000==0:
                     state_rand.append(np.random.get_state())
                     #print np.random.random()
-                    np.save("outputs/tempo_MC_chain_%d.npy"%Pid,[guesses,np.array(flag),np.array(like),Cls,state_rand])
+                    np.save("outputs/tempo_MC_ex_chain_%d.npy"%Pid,[guesses,np.array(flag),np.array(like),Cls,state_rand])
                     print "temporary file saved: %d"%Pid
         except:
             failed+=1
@@ -237,7 +237,7 @@ def MCMC_log_Jeff_new(guess,functional_form,proposal,proposal_fun,niter,priors_f
                 flag_temp = np.array(flag)
                 #print "%.2f rejected; %.2f accepted; %.2f Lucky accepted; %d negative: try removed"%(len(np.where(flag_temp==0)[0])/float(i),len(np.where(flag_temp==1)[0])/float(i),len(np.where(flag_temp==2)[0])/float(i),len(np.where(flag_temp==-1)[0]))
                 if i%10000==0:
-                    np.save("outputs/tempo_MC_chain_%d.npy"%Pid,[guesses,np.array(flag),np.array(like),Cls,state_rand])
+                    np.save("outputs/tempo_MC_new_chain_%d.npy"%Pid,[guesses,np.array(flag),np.array(like),Cls,state_rand])
                     print i, " temporary file saved: %d"%Pid
         except:
             failed+=1
