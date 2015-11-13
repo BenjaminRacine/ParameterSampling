@@ -142,9 +142,11 @@ au,As,ns,H0]
     mf = hp.almxfl(CG.generate_mfterm(dlm,cl[:lmax+1],bl[:lmax+1],nl[:lmax+1]),renorm)
     # the core of the MCMC
     tt1 = time.time()
-    testss = np.array(MH.MCMC_log_Jeff_new(guess_param, JJi.target_new,PS2P.prop_dist_form_params, PS2P.prop_func_form_params,niter,PS2P.Gaussian_priors_func,firstiter,seed,[[dlm,string_temp,dd,nl[:lmax+1],bl[:lmax+1]],[cl[:lmax+1],fluc,mf]],[x_mean_temp*0,np.matrix(cov_new_temp)],[priors_central_temp,priors_invvar_temp]))
+    save_string = "outputs/chain_new_%s_%s_%d_%d"%(save_title,str(which_par).replace(',','').replace('[','').replace(']','').replace(' ',''),np.random.randint(0,100000),niter)
+    print save_string
+    testss = np.array(MH.MCMC_log_Jeff_new(guess_param, JJi.target_new,PS2P.prop_dist_form_params, PS2P.prop_func_form_params,niter,PS2P.Gaussian_priors_func,firstiter,seed,save_string,[[dlm,string_temp,dd,nl[:lmax+1],bl[:lmax+1]],[cl[:lmax+1],fluc,mf]],[x_mean_temp*0,np.matrix(cov_new_temp)],[priors_central_temp,priors_invvar_temp]))
     print time.time() - tt1
-    np.save("outputs/chain_%s_%s_%d_%d.npy"%(save_title,str(which_par).replace(',','').replace('[','').replace(']','').replace(' ',''),np.random.randint(0,100000),niter),testss)
+    np.save(save_string+".npy",testss)
     return testss
 
 
@@ -174,9 +176,11 @@ def run_MCMC_ex(which_par,niter,save_title, renorm_var,firstiter=0,seed="none",g
     else :
         guess_param = guess
     tt1 = time.time()
-    testss = np.array(MH.MCMC_log(guess_param, JJi.functional_form_params_n,PS2P.prop_dist_form_params, PS2P.prop_func_form_params,niter,PS2P.Gaussian_priors_func,firstiter,seed,[dlm,string_temp,dd,nl,bl,cl],[x_mean_temp*0,np.matrix(cov_new_temp)],[priors_central_temp,priors_invvar_temp]))
+    save_string = "outputs/chain_ex_%s_%s_%d_%d"%(save_title,str(which_par).replace(',','').replace('[','').replace(']','').replace(' ',''),np.random.randint(0,100000),niter)
+    print save_string
+    testss = np.array(MH.MCMC_log(guess_param, JJi.functional_form_params_n,PS2P.prop_dist_form_params, PS2P.prop_func_form_params,niter,PS2P.Gaussian_priors_func,firstiter,seed,save_string,[dlm,string_temp,dd,nl,bl,cl],[x_mean_temp*0,np.matrix(cov_new_temp)],[priors_central_temp,priors_invvar_temp]))
     print time.time() - tt1
-    np.save("outputs/chain_%s_%s_%d_%d.npy"%(save_title,str(which_par).replace(',','').replace('[','').replace(']','').replace(' ',''),np.random.randint(0,100000),niter),testss)
+    np.save(save_string+".npy",testss)
     return testss
 
 
