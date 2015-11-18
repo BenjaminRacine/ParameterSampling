@@ -98,6 +98,17 @@ def prop_func_form_params(param1,param2,*arg):
     return np.log(MH.simple_2D_Gauss(param1-param2,arg[0],arg[1]))
 
 
+def prop_func_form_params_asym(param1,*arg):
+    """
+    Returns w(theta_i|theta_i+1), which is here a gaussian distribution with a given covariance and mean.
+    Keyword Arguments:
+    *args are:
+    x_mean -- the mean vector (np.array)
+    Cov -- covariance Matrix (np.matrix)
+    """
+    return np.log(MH.simple_2D_Gauss(param1,arg[0],arg[1]))
+
+
 def prop_dist_form_params(*arg):
     """
     Draw random numbers from a gaussian distribution with a given covariance and mean.
