@@ -122,7 +122,7 @@ def cor2cov(cov_diag,Correlation_matrix):
 
 
 
-def Triangle_plot_Cov_dat(chains,x_mean,Cov,titles,which_par,**kwargs):
+def Triangle_plot_Cov_dat(chains,x_mean,Cov,titles,which_par,save,**kwargs):
     """
     Returns the triangle plots for a given chain, and compare to a given prediction
 
@@ -145,6 +145,7 @@ def Triangle_plot_Cov_dat(chains,x_mean,Cov,titles,which_par,**kwargs):
     axScatter=[]
     x_mean = x_mean[which_par]
     Cov = Cov[which_par,:][:,which_par]
+    plt.figure(figsize=(12,9))
     for i in range(nb_param):
         rect_histx = [left+i*width, bottom+(nb_param-1-i)*width, width, width]
         ax_temp = plt.axes(rect_histx)
@@ -188,7 +189,9 @@ def Triangle_plot_Cov_dat(chains,x_mean,Cov,titles,which_par,**kwargs):
             #ax_temp.set_ylim(y1.min(),y1.max())
             #pass
     fig = plt.gcf()
-    fig.legend([ell, scat, ell2], ['Planck 2015', 'MCMC steps','MCMC Covariance'], "upper right")
+    fig.legend([ell, scat, ell2], ['Proposal Covariance', 'MCMC steps','Posterior Covariance'], "upper right")
+    if save!=0:
+        plt.savefig("plots/Triangle_%s"%save)
     return axScatter, axHistx
 
 
@@ -328,7 +331,7 @@ def plot_autocorr(chains,titles,which_par,burnin_cut,max_plot,save=0):
 
     """
     j=0
-    plt.figure(figsize=(12,8))
+    plt.figure(figsize=(12,9))
     for i in which_par:
         plt.plot(MH.autocorr(chains[:,j][burnin_cut:])[:max_plot],label=titles[i])
         j+=1
@@ -366,10 +369,7 @@ def plot_all(chain,titles,which_par,x_mean,Cov,burnin_cut=50,save=0,plot_int = 0
     chains = real_chain(guesses,flag)
     plot_autocorr(chains,titles,which_par,burnin_cut,1000,save)
     plot_detailed_chains(guesses,flag,chains,titles,which_par,x_mean,Cov,save)
-    plt.figure()
-    Triangle_plot_Cov_dat(chains,x_mean,Cov,titles,which_par)
-    if save!=0:
-        plt.savefig("plots/Triangle_%s.png"%save)
+    Triangle_plot_Cov_dat(chains,x_mean,Cov,titles,which_par,save)
     plot_like(guesses,like,flag,titles,which_par,save)
     plot_like_profile(guesses,like,flag,titles,which_par,save)
     
@@ -534,7 +534,7 @@ def plot_Gel_rub(file_list,N_max,burnin,save=0):
     for i in range(6):              
         plt.plot(np.arange(burnin+100,N_max,100),np.array(gel_dep)[:,i],label=titles[i])
     plt.xlabel("number of samples (including burnin)")
-    plt.fill_betweenx(np.linspace(1,np.array(gel_dep).max()),0,burnin,alpha=0.3)
+    plt.fill_betweenx(np.linspace(0.95,np.array(gel_dep).max()),0,burnin,alpha=0.3)
     plt.plot([], [], color='blue',alpha=0.3,label="burned_in",linewidth=10)
     plt.ylabel("R (Gelman-Rubin)")
     plt.hlines(1.01,0,N_max,linestyle = '--',alpha=0.5)
