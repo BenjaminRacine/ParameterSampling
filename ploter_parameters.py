@@ -122,7 +122,7 @@ def cor2cov(cov_diag,Correlation_matrix):
 
 
 
-def Triangle_plot_Cov_dat(guesses,flag,x_mean,Cov,titles,which_par,**kwargs):
+def Triangle_plot_Cov_dat(chains,x_mean,Cov,titles,which_par,**kwargs):
     """
     Returns the triangle plots for a given chain, and compare to a given prediction
 
@@ -136,7 +136,7 @@ def Triangle_plot_Cov_dat(guesses,flag,x_mean,Cov,titles,which_par,**kwargs):
     **kwargs are a set of arguments for the ellipses (to be tested)
     """
     nullfmt   = NullFormatter()
-    nb_param = guesses.shape[1]
+    nb_param = chains.shape[1]
     # definitions for the axes (left width and left_h is also bottom height and bottom_h)
     left = 0.06#/(nb_param)
     bottom = 0.1/(nb_param)
@@ -154,14 +154,15 @@ def Triangle_plot_Cov_dat(guesses,flag,x_mean,Cov,titles,which_par,**kwargs):
         ax_temp.locator_params(tight=True,nbins=4)
         x1 = np.linspace(x_mean[i]- 5*np.sqrt(Cov[i,i]),x_mean[i] + 5*np.sqrt(Cov[i,i]),200)
         #sUtahtop
-        ax_temp.plot(x1,np.exp(-0.5*(x1-x_mean[i])**2/Cov[i,i])/np.sqrt(2*np.pi*Cov[i,i]),"b")
-        ax_temp.hist(guesses[:,i],np.round(np.sqrt(guesses.shape[0])),histtype="step",normed=True,color='g')
+        ax_temp.plot(x1,np.exp(-0.5*(x1-x_mean[i])**2/Cov[i,i])/np.sqrt(2*np.pi*Cov[i,i]),"b--")
+        ax_temp.plot(x1,np.exp(-0.5*(x1-chains[:,i].mean())**2/chains[:,i].std()**2)/np.sqrt(2*np.pi*chains[:,i].std()**2),"r")
+        ax_temp.hist(chains[:,i],np.round(np.sqrt(chains.shape[0])),histtype="step",normed=True,color='g')
         ax_temp.set_title(titles[which_par[i]],y=1.25)
-        ax_temp.set_xlim(np.min((guesses[:,i].mean()-5*guesses[:,i].std(),x1.min())),np.max((guesses[:,i].mean()+5*guesses[:,i].std(),x1.max())))
+        ax_temp.set_xlim(np.min((chains[:,i].mean()-5*chains[:,i].std(),x1.min())),np.max((chains[:,i].mean()+5*chains[:,i].std(),x1.max())))
         #ax_temp.set_xlim(x1.min(),x1.max())
         for j in range(i+1,nb_param):
-            covar = np.cov([guesses[:,i],guesses[:,j]])
-            means = [guesses[:,i].mean(),guesses[:,j].mean()]
+            covar = np.cov([chains[:,i],chains[:,j]])
+            means = [chains[:,i].mean(),chains[:,j].mean()]
             rect_scatter = [left+(i)*width, bottom+(nb_param-j-1)*width, width, width]
             y1 = np.linspace(x_mean[j]- 5*np.sqrt(Cov[j,j]),x_mean[j] + 5*np.sqrt(Cov[j,j]),200)
             ax_temp=plt.axes(rect_scatter)
@@ -171,7 +172,7 @@ def Triangle_plot_Cov_dat(guesses,flag,x_mean,Cov,titles,which_par,**kwargs):
             #ax_temp.scatter(guesses[:,i][flag==0],guesses[:,j][flag==0],color="g",alpha=0.05)
             #scat = ax_temp.scatter(guesses[:,i][flag==1],guesses[:,j][flag==1],color="g",alpha=0.05)
             #ax_temp.scatter(guesses[:,i][flag==2],guesses[:,j][flag==2],color="g",alpha=0.05)
-            scat = ax_temp.scatter(guesses[:,i],guesses[:,j],color="g",alpha=0.05)
+            scat = ax_temp.scatter(chains[:,i],chains[:,j],color="g",alpha=0.05)
 #            ax_temp.add_artist(ell)
             #ax_temp.plot(np.arange(12))
             if i==0:
@@ -189,6 +190,8 @@ def Triangle_plot_Cov_dat(guesses,flag,x_mean,Cov,titles,which_par,**kwargs):
     fig = plt.gcf()
     fig.legend([ell, scat, ell2], ['Planck 2015', 'MCMC steps','MCMC Covariance'], "upper right")
     return axScatter, axHistx
+
+
 
 def plot_like_profile(guesses,like,flag,titles,which_par,save=0):
     """
@@ -236,7 +239,7 @@ def plot_like(guesses,like,flag,titles,which_par,save=0):
 
 
 
-def plot_chains(guesses,flag,chains,titles,which_par,x_mean,Cov,save=0):
+def plot_detailed_chains(guesses,flag,chains,titles,which_par,x_mean,Cov,save=0):
     """
     Plots the chains for all parameters, and the priors
 
@@ -269,9 +272,50 @@ def plot_chains(guesses,flag,chains,titles,which_par,x_mean,Cov,save=0):
             plt.savefig("plots/chain_%s_%s_%d.png"%(save,str(which_par).replace(',','').replace('[','').replace(']','').replace(' ',''),j))#,SafeID))
 
 
+def plot_chains(outputs,titles,which_par,x_mean,Cov,save=0):
+    """
+    Plots the chains for all parameters, and the priors
+
+    Keyword Arguments:
+    guesses -- the full list of generated guesses from the MCMC
+    flag -- a list giving 0 for rejected, 1 for accepted, 2 for accepted even if likelihood is lower, and -1 for forbidden values (most probably negative ones)
+    titles -- a list of titles for the plots
+    which_par -- a list of indices, corresponding to the order defined above, exemple [0,2] means ombh2,tau if order is [ombh2,omch2,tau,As,ns,H0]
+    x_mean -- mean value corresponding to input data
+    Cov -- covariance matrix (probably extracted from paper of other chains)
+    """
+    guesses,flag,like,Cls = outputs[:4]
+    N_par = len(guesses[0])
+    guesses = np.concatenate(guesses)
+    guesses = guesses.reshape(len(guesses)/N_par,N_par)
+    Cls=np.array(Cls)[flag>-2]
+    like=like[flag>-2]
+    guesses = guesses[flag>-2]
+    flag=flag[flag>-2]
+    niter = len(flag)
+    j=0
+    for i in which_par:
+        plt.figure()
+        plt.plot(np.arange(np.where(flag>0)[0][0],niter),chains[:,j],'b.',alpha = 0.5,label='MC chain')
+        plt.plot(np.arange(niter)[flag==0],guesses[flag==0,j],'k.',alpha = 0.2,label='Rejected')
+        plt.plot(np.arange(niter)[flag==1],guesses[flag==1,j],'g.',label="Accepted")
+        plt.plot(np.arange(niter)[flag==2],guesses[flag==2,j],'r.',label='Lucky accepted')
+        plt.title(titles[i]+"MC chains")
+        plt.xlabel("Iterations")
+        plt.ylabel(titles[i])
+        plt.plot(np.arange(niter),x_mean[i]*np.ones(niter),color='b',label = "Planck prior")
+        plt.fill_between(np.arange(niter),x_mean[i]-np.sqrt(Cov[i,i]),x_mean[i]+np.sqrt(Cov[i,i]),color='b',alpha=0.2)
+        plt.legend(loc="best")
+        tot = len(flag)
+        print titles[i],": %.2f rejected; %.2f accepted; %.2f Lucky accepted"%((flag==0).mean(),(flag==1).mean(),(flag==2).mean())
+        j+=1
+        if save!=0:
+            plt.savefig("plots/chain_%s_%s_%d.png"%(save,str(which_par).replace(',','').replace('[','').replace(']','').replace(' ',''),j))#,SafeID))
 
 
-def plot_autocorr(guesses,flag,titles,which_par,burnin_cut,max_plot,save=0):
+
+
+def plot_autocorr(chains,titles,which_par,burnin_cut,max_plot,save=0):
     """
     Plots the chains for all parameters, and the priors
 
@@ -284,17 +328,16 @@ def plot_autocorr(guesses,flag,titles,which_par,burnin_cut,max_plot,save=0):
 
     """
     j=0
+    plt.figure(figsize=(12,8))
     for i in which_par:
-        print j
-        plt.figure()
-        plt.plot(MH.autocorr(guesses[:,j][burnin_cut:])[:max_plot])
-        plt.title("%s autocorrelation"%titles[i])
-        plt.ylabel(titles[i])
-        plt.xlabel("Lag")
-        plt.hlines(0,0,max_plot,linestyle = '--',alpha=0.5)
-        if save!=0:
-            plt.savefig("plots/Autocorrelation_%s_%s_%d.png"%(save,str(which_par).replace(',','').replace('[','').replace(']','').replace(' ',''),j))#,SafeID))
+        plt.plot(MH.autocorr(chains[:,j][burnin_cut:])[:max_plot],label=titles[i])
         j+=1
+    plt.legend(loc="best")
+    plt.ylabel("autocorrelation")
+    plt.xlabel("Lag")
+    plt.hlines(0,0,max_plot,linestyle = '--',alpha=0.5)
+    if save!=0:
+        plt.savefig("plots/Autocorrelation_%s_%s.png"%(save,str(which_par).replace(',','').replace('[','').replace(']','').replace(' ','')))#,SafeID))
 
             
 def plot_all(chain,titles,which_par,x_mean,Cov,burnin_cut=50,save=0,plot_int = 0):
@@ -315,15 +358,16 @@ def plot_all(chain,titles,which_par,x_mean,Cov,burnin_cut=50,save=0,plot_int = 0
     guesses = guesses.reshape(len(guesses)/len(which_par),len(which_par))
     #Cls = np.concatenate(Cls)
     #Cls = Cls.reshape(len(Cls)/2,2)
+    print np.shape(guesses[:,0])
     Cls=np.array(Cls)[flag>-2]
     like=like[flag>-2]
     guesses = guesses[flag>-2]
     flag=flag[flag>-2]
     chains = real_chain(guesses,flag)
-    plot_autocorr(chains,np.ones(len(flag)),titles,which_par,burnin_cut,1000,save)
-    plot_chains(guesses,flag,chains,titles,which_par,x_mean,Cov,save)
+    plot_autocorr(chains,titles,which_par,burnin_cut,1000,save)
+    plot_detailed_chains(guesses,flag,chains,titles,which_par,x_mean,Cov,save)
     plt.figure()
-    Triangle_plot_Cov_dat(chains,np.ones(len(flag)),x_mean,Cov,titles,which_par)
+    Triangle_plot_Cov_dat(chains,x_mean,Cov,titles,which_par)
     if save!=0:
         plt.savefig("plots/Triangle_%s.png"%save)
     plot_like(guesses,like,flag,titles,which_par,save)
@@ -348,7 +392,7 @@ def create_real_chain(MCMC_output):
     """
     Return a clean chain, ie: the guesses where rejected with previous accepted value, from the output of the code
     """
-    guesses,flag,like,Cls = MCMC_output
+    guesses,flag,like,Cls = MCMC_output[:4]
     N_par = len(guesses[0])
     guesses = np.concatenate(guesses)
     guesses = guesses.reshape(len(guesses)/N_par,N_par)
@@ -363,8 +407,9 @@ def compare_chains(chain1,chain2,save = 0,burnin_cut = [200,200],titles = np.arr
     chain_1 = create_real_chain(chain1)[burnin_cut[0]:,:]
     chain_2 = create_real_chain(chain2)[burnin_cut[1]:,:]
     N_par = np.shape(chain_1)[1]
-    bin_1 = np.round(np.sqrt(np.shape(chain_1)[0]))
-    bin_2 = np.round(np.sqrt(np.shape(chain_2)[0]))
+    bin_1 = 200#np.round(np.sqrt(np.shape(chain_1)[0]))
+    bin_2 = 200#np.round(np.sqrt(np.shape(chain_2)[0]))
+    plt.figure(figsize = (12,9))
     for i in range(N_par):
         plt.subplot(3,2,i+1)
         his_1 = plt.hist(chain_1[:,i],bin_1,histtype='step',normed=True,label = lab[0],alpha=0.5,color="g")
@@ -373,7 +418,7 @@ def compare_chains(chain1,chain2,save = 0,burnin_cut = [200,200],titles = np.arr
         plt.tight_layout()
         if save!=0:
             plt.savefig("plots/Marginal_1D_lin_%s.png"%(save))
-    plt.figure()
+    plt.figure(figsize = (12,9))
     for i in range(N_par):
         plt.subplot(3,2,i+1)
         his_1 = plt.hist(chain_1[:,i],bin_1,histtype='step',normed=True,label = lab[0],alpha=0.5,log=True,color='g')
@@ -382,7 +427,7 @@ def compare_chains(chain1,chain2,save = 0,burnin_cut = [200,200],titles = np.arr
         plt.tight_layout()
         if save!=0:
             plt.savefig("plots/Marginal_1D_log_%s.png"%(save))
-    plt.figure()
+    plt.figure(figsize = (12,9))
     for i in range(N_par):
         plt.subplot(3,2,i+1)
         plt.plot(chain_1[:,i],label = lab[0],alpha=0.5,color="g")
@@ -393,7 +438,7 @@ def compare_chains(chain1,chain2,save = 0,burnin_cut = [200,200],titles = np.arr
         plt.xlim(0,100000)
         if save!=0:
             plt.savefig("plots/Trace_plot_%s.png"%(save))
-    plt.figure()
+    plt.figure(figsize = (12,9))
     for i in range(N_par):
         plt.subplot(3,2,i+1)
         plt.plot(chain_1[:1000,i],label = lab[0],alpha=0.5,color="g")
@@ -453,9 +498,47 @@ def merge(list_file, cut_burn):
         G.append(np.array(file_[0])[cut_burn:,:])
         F.append(np.array(file_[1])[cut_burn:])
         L.append(np.array(file_[2])[cut_burn:])
-        C.append(np.array(file_[3])[cut_burn:])
+        C.append(np.zeros(len(np.array(file_[2])))[cut_burn:])#np.array(file_[3])[cut_burn:])
     G = np.concatenate(G)
     F = np.concatenate(F)
     L= np.concatenate(L)
     C = np.concatenate(C)
     return [G,F,L,C]
+
+
+
+def Gel_Rub(chain_list,n,burnin):
+    chain_list = np.array(map(lambda arr:arr[burnin:n],chain_list))
+    n= chain_list.shape[1]
+    m= chain_list.shape[0]
+    Vars = np.var(chain_list,axis=1)
+    Means = np.mean(chain_list,axis=1)
+    W = np.mean(Vars,axis=0)
+    B = n*np.var(Means,axis=0)
+    #W = np.mean(var(chain_list,axis=1))
+    #theta_m_m = np.mean(np.mean(chain_list,axis=1))
+    #B = n*np.var(cc_list.mean(axis=1)-theta_m_m)
+    vaar = (1-1./n)*W+1./n*B
+    return np.sqrt(vaar/W)
+
+def plot_Gel_rub(file_list,N_max,burnin,save=0):
+    def prepare_chains(file_list):
+        outputs = map(np.load,file_list)
+        tt = map(lambda outs:create_real_chain(outs[:4]),outputs)
+        return tt
+    tt = prepare_chains(file_list)
+    gel_dep = []
+    plt.figure()
+    for i in range(burnin+100,N_max,100):
+        gel_dep.append(Gel_Rub(tt,i,burnin))
+    for i in range(6):              
+        plt.plot(np.arange(burnin+100,N_max,100),np.array(gel_dep)[:,i],label=titles[i])
+    plt.xlabel("number of samples (including burnin)")
+    plt.fill_betweenx(np.linspace(1,np.array(gel_dep).max()),0,burnin,alpha=0.3)
+    plt.plot([], [], color='blue',alpha=0.3,label="burned_in",linewidth=10)
+    plt.ylabel("R (Gelman-Rubin)")
+    plt.hlines(1.01,0,N_max,linestyle = '--',alpha=0.5)
+    plt.legend(loc='best')
+    plt.title("Gelman-Rubin test")
+    if save!=0:
+        plt.savefig("plots/Gelman_Rubin_%s.npy"%save)
