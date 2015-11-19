@@ -521,7 +521,7 @@ def Gel_Rub(chain_list,n,burnin):
     vaar = (1-1./n)*W+1./n*B
     return np.sqrt(vaar/W)
 
-def plot_Gel_rub(file_list,N_max,burnin,save=0):
+def plot_Gel_rub(file_list,titles,N_max,burnin,save=0):
     def prepare_chains(file_list):
         outputs = map(np.load,file_list)
         tt = map(lambda outs:create_real_chain(outs[:4]),outputs)
