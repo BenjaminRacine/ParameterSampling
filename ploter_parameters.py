@@ -122,7 +122,7 @@ def cor2cov(cov_diag,Correlation_matrix):
 
 
 
-def Triangle_plot_Cov_dat(chains,x_mean,Cov,titles,which_par,save,**kwargs):
+def Triangle_plot_Cov_dat(chains,x_mean,Cov,titles,which_par,save,title_plot,**kwargs):
     """
     Returns the triangle plots for a given chain, and compare to a given prediction
 
@@ -188,6 +188,9 @@ def Triangle_plot_Cov_dat(chains,x_mean,Cov,titles,which_par,save,**kwargs):
             ax_temp.set_ylim(np.min((means[1]-5*np.sqrt(covar[1,1]),y1.min())),np.max((means[1]+5*np.sqrt(covar[1,1]),y1.max())))
             #ax_temp.set_ylim(y1.min(),y1.max())
             #pass
+    plt.suptitle(title_plot,size=16)
+    plt.figtext(0.65,0.75,"number of samples: %d"%len(chains[:,0]),size=16)
+    plt.figtext(0.65,0.70,"aceptance rate = %.2f"%np.divide(len(np.unique(chains[:,0])),len(chains[:,0]),dtype=float),size =16)
     fig = plt.gcf()
     fig.legend([ell, scat, ell2], ['Proposal Covariance', 'MCMC steps','Posterior Covariance'], "upper right")
     if save!=0:
@@ -220,7 +223,7 @@ def plot_like_profile(guesses,like,flag,titles,which_par,save=0):
         if save!=0:
             plt.savefig("plots/log_like_profile_%s_%s_%d.png"%(save,str(which_par).replace(',','').replace('[','').replace(']','').replace(' ',''),j))#,SafeID))
     
-def plot_like(guesses,like,flag,titles,which_par,save=0):
+def plot_like(guesses,like,flag,titles,which_par,save=0,title_plot=""):
     """
     Plots the likelihood values, ie the log likelihood as a function of iteration.
 
@@ -242,7 +245,7 @@ def plot_like(guesses,like,flag,titles,which_par,save=0):
 
 
 
-def plot_detailed_chains(guesses,flag,chains,titles,which_par,x_mean,Cov,save=0):
+def plot_detailed_chains(guesses,flag,chains,titles,which_par,x_mean,Cov,save=0,title_plot=""):
     """
     Plots the chains for all parameters, and the priors
 
@@ -271,6 +274,7 @@ def plot_detailed_chains(guesses,flag,chains,titles,which_par,x_mean,Cov,save=0)
         tot = len(flag)
         print titles[i],": %.2f rejected; %.2f accepted; %.2f Lucky accepted"%((flag==0).mean(),(flag==1).mean(),(flag==2).mean())
         j+=1
+        plt.title(title_plot)
         if save!=0:
             plt.savefig("plots/chain_%s_%s_%d.png"%(save,str(which_par).replace(',','').replace('[','').replace(']','').replace(' ',''),j))#,SafeID))
 
@@ -318,7 +322,7 @@ def plot_chains(outputs,titles,which_par,x_mean,Cov,save=0):
 
 
 
-def plot_autocorr(chains,titles,which_par,burnin_cut,max_plot,save=0):
+def plot_autocorr(chains,titles,which_par,burnin_cut,max_plot,save=0,title_plot=""):
     """
     Plots the chains for all parameters, and the priors
 
@@ -339,11 +343,12 @@ def plot_autocorr(chains,titles,which_par,burnin_cut,max_plot,save=0):
     plt.ylabel("autocorrelation")
     plt.xlabel("Lag")
     plt.hlines(0,0,max_plot,linestyle = '--',alpha=0.5)
+    plt.title(title_plot)
     if save!=0:
         plt.savefig("plots/Autocorrelation_%s_%s.png"%(save,str(which_par).replace(',','').replace('[','').replace(']','').replace(' ','')))#,SafeID))
 
             
-def plot_all(chain,titles,which_par,x_mean,Cov,burnin_cut=50,save=0,plot_int = 0):
+def plot_all(chain,titles,which_par,x_mean,Cov,burnin_cut=50,save=0,plot_title="",plot_int = 0):
     """
     chain -- output of the MCMC, should contain guesses,flag,like,Cls
     titles -- a list of titles for the plots
@@ -367,9 +372,9 @@ def plot_all(chain,titles,which_par,x_mean,Cov,burnin_cut=50,save=0,plot_int = 0
     guesses = guesses[flag>-2]
     flag=flag[flag>-2]
     chains = real_chain(guesses,flag)
-    plot_autocorr(chains,titles,which_par,burnin_cut,1000,save)
-    plot_detailed_chains(guesses,flag,chains,titles,which_par,x_mean,Cov,save)
-    Triangle_plot_Cov_dat(chains,x_mean,Cov,titles,which_par,save)
+    plot_autocorr(chains,titles,which_par,burnin_cut,1000,save,plot_title)
+    plot_detailed_chains(guesses,flag,chains,titles,which_par,x_mean,Cov,save,plot_title)
+    Triangle_plot_Cov_dat(chains,x_mean,Cov,titles,which_par,save,plot_title)
     plot_like(guesses,like,flag,titles,which_par,save)
     plot_like_profile(guesses,like,flag,titles,which_par,save)
     
@@ -521,14 +526,14 @@ def Gel_Rub(chain_list,n,burnin):
     vaar = (1-1./n)*W+1./n*B
     return np.sqrt(vaar/W)
 
-def plot_Gel_rub(file_list,titles,N_max,burnin,save=0):
+def plot_Gel_rub(file_list,titles,N_max,burnin,save=0,title_plot=""):
     def prepare_chains(file_list):
         outputs = map(np.load,file_list)
         tt = map(lambda outs:create_real_chain(outs[:4]),outputs)
         return tt
     tt = prepare_chains(file_list)
     gel_dep = []
-    plt.figure()
+    plt.figure(figsize=(12,9))
     for i in range(burnin+100,N_max,100):
         gel_dep.append(Gel_Rub(tt,i,burnin))
     for i in range(6):              
@@ -539,7 +544,8 @@ def plot_Gel_rub(file_list,titles,N_max,burnin,save=0):
     plt.ylabel("R (Gelman-Rubin)")
     plt.hlines(1.01,0,N_max,linestyle = '--',alpha=0.5)
     plt.legend(loc='best')
-    plt.title("Gelman-Rubin test")
+    plt.title(title_plot)
+    plt.ylim(0.95,1.2)
     if save!=0:
         plt.savefig("plots/Gelman_Rubin_%s.png"%save)
 
@@ -547,10 +553,10 @@ def plot_Gel_rub(file_list,titles,N_max,burnin,save=0):
 
 
 
-def plot_abel(list_len,x_mean,cov_new,titles,which_par,save=0,N_max=15000,burnin=500):
+def plot_abel(list_len,x_mean,cov_new,titles,which_par,save=0,title_plot="",N_max=15000,burnin=500):
     test_merge = merge(list_len,burnin)
     chains = create_real_chain(test_merge)
-    Triangle_plot_Cov_dat(chains,x_mean,cov_new,titles,which_par,save)
-    plot_autocorr(chains,titles,which_par,0,1000,save)
-    plot_Gel_rub(list_len,titles,N_max,burnin,save)
+    Triangle_plot_Cov_dat(chains,x_mean,cov_new,titles,which_par,save,title_plot)
+    plot_autocorr(chains,titles,which_par,0,1000,save,title_plot)
+    plot_Gel_rub(list_len,titles,N_max,burnin,save,title_plot)
     
