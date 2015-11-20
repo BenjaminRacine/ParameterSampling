@@ -541,4 +541,16 @@ def plot_Gel_rub(file_list,titles,N_max,burnin,save=0):
     plt.legend(loc='best')
     plt.title("Gelman-Rubin test")
     if save!=0:
-        plt.savefig("plots/Gelman_Rubin_%s.npy"%save)
+        plt.savefig("plots/Gelman_Rubin_%s.png"%save)
+
+
+
+
+
+def plot_abel(list_len,x_mean,cov_new,titles,which_par,save=0,N_max=15000,burnin=500):
+    test_merge = merge(list_len,burnin)
+    chains = create_real_chain(test_merge)
+    Triangle_plot_Cov_dat(chains,x_mean,cov_new,titles,which_par,save)
+    plot_autocorr(chains,titles,which_par,0,1000,save)
+    plot_Gel_rub(list_len,titles,N_max,burnin,save)
+    
