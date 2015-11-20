@@ -344,6 +344,7 @@ def plot_autocorr(chains,titles,which_par,burnin_cut,max_plot,save=0,title_plot=
     plt.xlabel("Lag")
     plt.hlines(0,0,max_plot,linestyle = '--',alpha=0.5)
     plt.title(title_plot)
+    plt.ylim(-0.2,1)
     if save!=0:
         plt.savefig("plots/Autocorrelation_%s_%s.png"%(save,str(which_par).replace(',','').replace('[','').replace(']','').replace(' ','')))#,SafeID))
 
@@ -539,7 +540,7 @@ def plot_Gel_rub(file_list,titles,N_max,burnin,save=0,title_plot=""):
     for i in range(6):              
         plt.plot(np.arange(burnin+100,N_max,100),np.array(gel_dep)[:,i],label=titles[i])
     plt.xlabel("number of samples (including burnin)")
-    plt.fill_betweenx(np.linspace(0.95,np.array(gel_dep).max()),0,burnin,alpha=0.3)
+    plt.fill_betweenx(np.linspace(0.95,1.4,0,burnin,alpha=0.3)
     plt.plot([], [], color='blue',alpha=0.3,label="burned_in",linewidth=10)
     plt.ylabel("R (Gelman-Rubin)")
     plt.hlines(1.01,0,N_max,linestyle = '--',alpha=0.5)
