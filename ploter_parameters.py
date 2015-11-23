@@ -712,8 +712,9 @@ def plot_parameter_stats(file_list,titles,burnin,save=0,title_plot="",thining_fa
         for j in range(N_list):
             tt_arr = np.array(tt[j])
             plt.errorbar(j, tt_arr[:,i].mean(),yerr = tt_arr[:,i].std()/np.sqrt(len(tt_arr[:,i])),marker='.',mfc='red')
-            plt.tight_layout()
-            ax_temp=plt.gca()
+        plt.title(titles[i])
+        plt.tight_layout()
+        ax_temp=plt.gca()
         plt.plot(np.arange(N_list),chains[:,i].mean()*np.ones(N_list),color='b',label = "Total chain")
         plt.fill_between(np.arange(N_list),chains[:,i].mean()-chains[:,i].std()/np.sqrt(len(chains[:,i])),chains[:,i].mean()+chains[:,i].std()/np.sqrt(len(chains[:,i])),color='b',alpha=0.2)
         ax_temp.xaxis.set_major_formatter(nullfmt)
