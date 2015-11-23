@@ -272,8 +272,10 @@ def Triangle_plot_Cov_density(chains,x_mean,Cov,titles,which_par,save,title_plot
             y1 = np.linspace(x_mean[j]- 5*np.sqrt(Cov[j,j]),x_mean[j] + 5*np.sqrt(Cov[j,j]),200)
             ax_temp=plt.axes(rect_scatter)
             ax_temp.pcolormesh(xi, yi, zi.reshape(xi.shape),cmap = "gnuplot2_r")
-            ell = plot_ellipse(Cov[[i,j],:][:,[i,j]],x_mean[[i,j]],1,plot=1,axe=ax_temp,fill=False,color="b")
-            ell2 = plot_ellipse(covar,means,1,plot=1,axe=ax_temp,fill=False,color="r")
+            ell = plot_ellipse(Cov[[i,j],:][:,[i,j]],x_mean[[i,j]],1,plot=1,axe=ax_temp,fill=False,color="b",ls="dashed")
+            ell2 = plot_ellipse(covar,means,1,plot=1,axe=ax_temp,fill=False,color="r",ls = "dashed")
+            xbins, ybins, sigma = compute_sigma_level(chains[:,i], chains[:,j],nbins = 30)
+            ax_temp.contour(xbins, ybins, sigma.T, levels=[0.683, 0.955],colors=["c","k"])
             #ax_temp.scatter(guesses[:,i][flag==0],guesses[:,j][flag==0],color="g",alpha=0.05)
             #scat = ax_temp.scatter(guesses[:,i][flag==1],guesses[:,j][flag==1],color="g",alpha=0.05)
             #ax_temp.scatter(guesses[:,i][flag==2],guesses[:,j][flag==2],color="g",alpha=0.05)
@@ -481,8 +483,8 @@ def real_chain(guesses,flag):
             guesse_new[j] = guesse_new[accep_idx[i]]
     for k in range(accep_idx[-1],len(guesses)):
         guesse_new[k] = guesse_new[accep_idx[-1]]
-    print accep_idx[0]
-    print guesse_new[accep_idx[0]:].shape[0]
+    #print accep_idx[0]
+    #print guesse_new[accep_idx[0]:].shape[0]
     return guesse_new[accep_idx[0]:]
 
 def create_real_chain(MCMC_output):
@@ -649,6 +651,7 @@ def plot_Gel_rub(file_list,titles,N_max,burnin,save=0,title_plot="",thining_fact
         outputs = map(np.load,file_list)
         tt = map(lambda outs:create_real_chain(outs[:4])[::thining_fact],outputs)
         return tt
+    print "Gelman Rubin computed from %d chains"%len(file_list)
     tt = prepare_chains(file_list)
     gel_dep = []
     plt.figure(figsize=(12,9))
@@ -677,7 +680,7 @@ def plot_Gel_rub(file_list,titles,N_max,burnin,save=0,title_plot="",thining_fact
 def plot_abel(list_len,x_mean,cov_new,titles,which_par,save=0,title_plot="",N_max=15000,burnin=500,thining_fact=1):
     test_merge = merge(list_len,burnin)
     chains = create_real_chain(test_merge)[::thining_fact]
-    Triangle_plot_Cov_dat(chains,x_mean,cov_new,titles,which_par,save,title_plot)
+    Triangle_plot_Cov_density(chains,x_mean,cov_new,titles,which_par,save,title_plot)
     plot_autocorr(chains,titles,which_par,0,1000,save,title_plot)
     plot_Gel_rub(list_len,titles,N_max,burnin,save,title_plot,thining_fact)
     
