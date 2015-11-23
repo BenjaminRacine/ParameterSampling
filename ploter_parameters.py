@@ -721,3 +721,5 @@ def plot_parameter_stats(file_list,titles,burnin,save=0,title_plot="",thining_fa
         ax_temp.xaxis.set_visible(False)
         ax_temp.locator_params(tight=True,nbins=4)
         plt.xlim(-1,N_list)
+    plt.suptitle(title_plot,y=1,size=16)
+    plt.tight_layout()
