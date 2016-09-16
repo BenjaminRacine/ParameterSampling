@@ -1,4 +1,4 @@
-import healpy as hp
+mport healpy as hp
 import numpy as np
 from matplotlib import pyplot as plt
 import CG_functions as CG
@@ -10,14 +10,33 @@ import PS2param_module as PS2P
 import Jeff_idea as JJi
 import multiprocessing
 import itertools
-# submit as python MCMC_main_script.py method N_proc
-# where Method = "new" or "exact"
-#N_proc = 
+from logger import *
+import psutil
+import logging
+logging.basicConfig(format='%(asctime)s %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p',filename='log/%s_%d.log'%(__file__.replace(".py",""),os.getpid()),level=logging.DEBUG,stream=sys.stdout)
+#open_log(1, "MCMC_main_script_posteriorcov_1")
+
+logging.warning(psutil.virtual_memory())
+#print "test"
+#sys.stdout.flush()
+
+#close_log(1)
+
+
+
 N_proc_tot = multiprocessing.cpu_count()
 print "number of available proc: %d"%N_proc_tot
 
+Method = 1
+N_iter = 30000
+print "N_iter = ",N_iter
+title_save = "renopt_sym_900SNR1_final_run"
+
+logging.warning('is when this event was logged.')
+#sys.stdout.flush()
+
 nside = 2048#128
-lmax= 2200#2200
+lmax= 1500#2200
 generate_new_data = 0
 
 #method = sys.argv[1]
@@ -36,7 +55,7 @@ except:
 random_id = np.random.randint(0,100000)
 
 # loads initial param file
-dd  = cb.ini2dic(camb_dir+"Planck_params_params.ini")
+dd  = cb.ini2dic(camb_dir+"Planck_params_params.ini")#_nolens.ini")
 
 # defines the strings of the variable we will use (as named in camb)
 strings=np.array(['ombh2','omch2','re_optical_depth','scalar_amp(1)','scalar_spectral_index(1)','hubble'])
@@ -60,29 +79,48 @@ dd['hubble'] = 67.31
 ########### Here we simulate the data set ############
 
 # White noise spectrum, (Commander level, so low)
-nl = 1.7504523623688016e-16*1e12 * np.ones(2500)
+#nl = 1.7504523623688016e-16*1e12 * np.ones(2500)
 #nl = 1.7504523623688016e-16*1e12 * np.ones(2500) *2
 
 
 # Gaussian beam fwhm 5 arcmin 
 #bl = CG.gaussian_beam(2500,5)
 #bl = CG.gaussian_beam(2500,5*np.sqrt(hp.nside2pixarea(nside,degrees=True))*60)
-bl = CG.gaussian_beam(2500,7)
+bl = CG.gaussian_beam(2500,13)
 
 # Spectrum according to parameter defined above
 if generate_new_data==1:
     Cl = cb.generate_spectrum(dd)
+    # White noise level defined so that SNR=1 at \ell of 1700
+    nl = Cl[900,1]*bl[900]**2*np.ones(2500)
     lmax_temp = Cl.shape[0]-1
     alm = hp.synalm(Cl[:,1])
     dlm = hp.almxfl(alm,bl[:lmax_temp+1])
     nlm = hp.synalm(nl[:lmax_temp+1])
     dlm = dlm+nlm
+    #np.save("Dataset_planck2015_900SNR1_13arcmin.npy",dlm)
+    plt.figure()
+    ell = np.arange(lmax)*np.arange(1,lmax+1)
+    plt.plot(ell*(Cl[:lmax,1]*bl[:lmax]**2),label = "$C_\ell b_\ell^2$")
+    plt.plot(ell*(nl[:lmax]),label="$n_\ell$")
+    plt.plot(ell*(Cl[:lmax,1]*bl[:lmax]**2+nl[:lmax]),"--",label = "$C_\ell b_\ell^2 + n_\ell$")
+    plt.ylabel("$\ell (\ell +1) C_\ell$")
+    plt.xlabel("$\ell$")
+    plt.axvline(900)
+    plt.yscale("log")
+    plt.legend(loc="best")
+    plt.savefig("plots/powerspectrum_WMAPtype.png")
     print "dataset generated"
 
 else:
-    dlm =np.load("Dataset_planck2015_175eminus4_whitenoise_7arcmin.npy")
+    dlm =np.load("Dataset_planck2015_900SNR1_13arcmin.npy")
+    #dlm =np.load("Dataset_planck2015_175eminus4_whitenoise_7arcmin.npy")
     #dlm =np.load("Dataset_planck2015__175eminus4_7arcmin_128_200.npy")
-    print "dataset read"
+    print "dataset read %s"%"Dataset_planck2015_900SNR1_13arcmin.npy"
+
+
+Cl = cb.generate_spectrum(dd)
+nl = Cl[900,1]*bl[900]**2*np.ones(2500)
 
 dlm = CG.filter_alm(dlm,lmax)
 #################################################
@@ -90,12 +128,19 @@ dlm[[hp.Alm.getidx(lmax,0,0),hp.Alm.getidx(lmax,1,0),hp.Alm.getidx(lmax,1,1)]]=0
 nl = nl[:lmax+1]
 bl=bl[:lmax+1]
 
+
+print nl[5]
+    
+
+
 # Could be used for asymetric proposal, but now only for first guess
 x_mean = np.array([0.02222,0.1197,0.078,3.089,0.9655,67.31])
-
+#np.load("mean_from_posteriors_highres.npy")#np.array([0.02222,0.1197,0.078,3.089,0.9655,67.31])                            
 
 #cov_mat from tableTT_lowEB downloaded from PLA, used in proposal
-cov_new = np.load("cov_tableTT_lowEB_2_3_5_6_7_23.npy")
+cov_new = np.load("covar_new_900_40000samples_burnin1000_forpaper.npy")
+#np.load("cov_tableTT_lowEB_2_3_5_6_7_23.npy") This is for the first run, to produce the chains for estimating the posterior variance.
+
 
 
 # priors parameters here central value and 1/sigma**2
@@ -144,6 +189,7 @@ au,As,ns,H0]
     tt1 = time.time()
     save_string = "outputs/chain_new_%s_%s_%d_%d"%(save_title,str(which_par).replace(',','').replace('[','').replace(']','').replace(' ',''),np.random.randint(0,100000),niter)
     print save_string
+    sys.stdout.flush()
     testss = np.array(MH.MCMC_log_Jeff_new(guess_param, JJi.target_new,PS2P.prop_dist_form_params, PS2P.prop_func_form_params,niter,PS2P.Gaussian_priors_func,firstiter,seed,save_string,[[dlm,string_temp,dd,nl[:lmax+1],bl[:lmax+1]],[cl[:lmax+1],fluc,mf]],[x_mean_temp*0,np.matrix(cov_new_temp)],[priors_central_temp,priors_invvar_temp]))
     print time.time() - tt1
     np.save(save_string+".npy",testss)
@@ -168,6 +214,7 @@ def run_MCMC_ex(which_par,niter,save_title, renorm_var,firstiter=0,seed="none",g
     priors_central_temp = priors_central[which_par]
     priors_invvar_temp = priors_invvar[which_par]
     print titles_temp
+    sys.stdout.flush()
     dd2 = cb.update_dic(dd,x_mean_temp,string_temp)
     cl = cb.generate_spectrum(dd2)[:lmax+1,1]
     cl[:2] = 1.e-35
@@ -178,6 +225,7 @@ def run_MCMC_ex(which_par,niter,save_title, renorm_var,firstiter=0,seed="none",g
     tt1 = time.time()
     save_string = "outputs/chain_ex_%s_%s_%d_%d"%(save_title,str(which_par).replace(',','').replace('[','').replace(']','').replace(' ',''),np.random.randint(0,100000),niter)
     print save_string
+    sys.stdout.flush()
     testss = np.array(MH.MCMC_log(guess_param, JJi.functional_form_params_n,PS2P.prop_dist_form_params, PS2P.prop_func_form_params,niter,PS2P.Gaussian_priors_func,firstiter,seed,save_string,[dlm,string_temp,dd,nl,bl,cl],[x_mean_temp*0,np.matrix(cov_new_temp)],[priors_central_temp,priors_invvar_temp]))
     print time.time() - tt1
     np.save(save_string+".npy",testss)
@@ -185,3 +233,19 @@ def run_MCMC_ex(which_par,niter,save_title, renorm_var,firstiter=0,seed="none",g
 
 
 
+
+
+if Method==0:
+    tt = time.time()
+    test_ex_REAL = run_MCMC_ex([0,1,2,3,4,5],N_iter,title_save,2.4**2/6)
+    print time.time()-tt
+elif Method==1:
+    tt = time.time()
+    test_new_REAL = run_MCMC_new([0,1,2,3,4,5],N_iter,title_save,2.4**2/6)
+    print time.time()-tt
+
+sys.stdout.flush()
+logging.warning(psutil.virtual_memory())
+
+
+#close_log(1)  
