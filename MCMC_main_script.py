@@ -1,4 +1,4 @@
-mport healpy as hp
+import healpy as hp
 import numpy as np
 from matplotlib import pyplot as plt
 import CG_functions as CG
@@ -27,6 +27,8 @@ logging.warning(psutil.virtual_memory())
 N_proc_tot = multiprocessing.cpu_count()
 print "number of available proc: %d"%N_proc_tot
 
+
+## Method 0 is for the direct sampling (section 3.3 of the paper), method 1 is the joint method. 
 Method = 1
 N_iter = 30000
 print "N_iter = ",N_iter
