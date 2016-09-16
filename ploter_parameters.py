@@ -5,13 +5,15 @@ from matplotlib.ticker import MaxNLocator
 from matplotlib.patches import Ellipse  
 import MH_module as MH
 from matplotlib.legend_handler import HandlerPatch
+from matplotlib.legend_handler import HandlerLineCollection
+from matplotlib.collections import LineCollection
+from matplotlib.lines import Line2D  
 import tabulate as T
 import scipy.stats
 import scipy.special
 from scipy.stats import kde
 import matplotlib 
 import seaborn as sns
-from test_handler_legend import *
 import matplotlib
 from matplotlib.colors import Colormap
 #import pymc
@@ -24,6 +26,49 @@ for i in list_rules :
 sns.set(style="white")#,font_scale=1.)#,rc={"figure.figsize": (12,9)})
 #sns.set_style("ticks")
 sns.set_context("paper")
+
+
+class HandlerDashedLines(HandlerLineCollection):
+   """                                                                                                                                 
+   Custom Handler for LineCollection instances.                                                                                        
+   """
+   def create_artists(self, legend, orig_handle,
+                      xdescent, ydescent, width, height, fontsize, trans):
+    # figure out how many lines there are
+       numlines = len(orig_handle.get_segments())
+       xdata, xdata_marker = self.get_xdata(legend, xdescent, ydescent,
+                                            width, height, fontsize)
+       leglines = []
+       # divide the vertical space where the lines will go
+       # into equal parts based on the number of lines
+       ydata = ((height) / (numlines + 1)) * np.ones(xdata.shape, float)
+       # for each line, create the line at the proper location
+       # and set the dash pattern
+       #print height
+       for i in range(numlines):
+           legline = Line2D(xdata, ydata * (numlines - i*1.8) - ydescent)
+           self.update_prop(legline, orig_handle, legend)
+           # set color, dash pattern, and linewidth to that
+           # of the lines in linecollection
+           try:
+               color = orig_handle.get_colors()[i]
+           except IndexError:
+               color = orig_handle.get_colors()[0]
+           try:
+               dashes = orig_handle.get_dashes()[i]
+           except IndexError:
+               dashes = orig_handle.get_dashes()[0]
+           try:
+               lw = orig_handle.get_linewidths()[i]
+           except IndexError:
+               lw = orig_handle.get_linewidths()[0]
+           if dashes[0] != None:
+               legline.set_dashes(dashes[1])
+           legline.set_color(color)
+           legline.set_transform(trans)
+           legline.set_linewidth(lw)
+           leglines.append(legline)
+       return leglines
 
 
 def determine_FD_binning(array_in):
