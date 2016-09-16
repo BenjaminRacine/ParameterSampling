@@ -1,8 +1,8 @@
 import numpy as np
 from matplotlib import pyplot as plt
 import sys
-
-
+import logging
+from scipy import signal
 
 def Equation_ap(x,A,b):
     """
@@ -51,13 +51,27 @@ def simple_2D_Gauss(x,*arg):
 
 
 
-
+def fast_corr(x):
+    length = len(x)
+    b = np.zeros(length * 2)
+    b[length/2:length/2+length] = x
+    c = signal.fftconvolve(b, x[::-1], mode='valid') 
+    return c
 
 def autocorr(x):
     '''
     return the autocorrelation of a given array (much faster than computing the actual function)
     '''
     aa = np.correlate(x-x.mean(), x-x.mean(), mode='full')
+    maxcorr = np.argmax(aa)
+    result = aa / aa[maxcorr]
+    return result[np.argmax(result):]
+
+def fast_autocorr(x):
+    '''
+    return the autocorrelation of a given array (much faster than computing the actual function)
+    '''
+    aa = signal.fftconvolve(x-x.mean(),x-x.mean())#fast_corr(x)#np.correlate(x-x.mean(), x-x.mean(), mode='full')
     maxcorr = np.argmax(aa)
     result = aa / aa[maxcorr]
     return result[np.argmax(result):]
@@ -198,6 +212,7 @@ def MCMC_log_Jeff_new(guess,functional_form,proposal,proposal_fun,niter,priors_f
     #like.append(f_old)
     failed = 0
     state_rand=[]
+    logging.info("temp file will be saved in %s"%savestring+"_temp_%d.npy"%Pid)
     if firstiter==0:
         pass
     else:
@@ -238,11 +253,11 @@ def MCMC_log_Jeff_new(guess,functional_form,proposal,proposal_fun,niter,priors_f
                     else:
                         flag.append(0)
                         pass
-            if i%10000==0:
+            if i%5000==0:
                 state_rand.append(np.random.get_state())                    
                 flag_temp = np.array(flag)
                 #print "%.2f rejected; %.2f accepted; %.2f Lucky accepted; %d negative: try removed"%(len(np.where(flag_temp==0)[0])/float(i),len(np.where(flag_temp==1)[0])/float(i),len(np.where(flag_temp==2)[0])/float(i),len(np.where(flag_temp==-1)[0]))
-                if i%10000==0:
+                if i%5000==0:
                     np.save(savestring+"_temp_%d.npy"%Pid,[guesses,np.array(flag),np.array(like),Cls,state_rand])
                     print i, " temporary file saved: %d"%Pid
         except:
