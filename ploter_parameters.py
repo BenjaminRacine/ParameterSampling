@@ -14,7 +14,7 @@ import seaborn as sns
 from test_handler_legend import *
 import matplotlib
 from matplotlib.colors import Colormap
-import pymc
+#import pymc
 #matplotlib.rcParams.update({'font.size': 22})
 
 list_rules = list(T.LATEX_ESCAPE_RULES)
@@ -860,6 +860,8 @@ def Triangle_plot_comparison(chains,chains2,titles,which_par,save,title_plot,**k
     **kwargs are a set of arguments for the ellipses (to be tested)
     """
     sns.set_style("ticks")
+    #sns.set_style({"xtick.direction": "in","ytick.direction": "in"})
+    #sns.set_style("ticks")
     nullfmt   = NullFormatter()
     nb_param = chains.shape[1]
     ticks=np.array([[0.0215,0.023],[0.11,0.12,0.13],[0.00,0.06,0.12],[2.94,3.06,3.18],[0.94,0.97,1.00],[64,68,72]])
@@ -932,26 +934,49 @@ def Triangle_plot_comparison(chains,chains2,titles,which_par,save,title_plot,**k
             ax_temp.xaxis.set_ticklabels(ticklabs[i])
             ax_temp_up.set_yticks(ticks[i])
             ax_temp_up.set_xticks(ticks[j])
+            ax_temp.set_ylabel(titles[which_par[j]])
             if i==0:
                 #ax_temp.yaxis.set_ticks_position('left')
                 ax_temp_up.set_title(titles[which_par[j]],y=1.05)
                 #ax_temp_up.xaxis.set_ticks_position("top")#set_visible(False)    
-                ax_temp_up.set_xticklabels([])#xaxis.set_visible(False)
-                ax_temp_up.set_yticklabels([])#.yaxis.set_visible(False)
+                ax_temp.set_ylabel(titles[which_par[j]])#.yaxis.set_visible(False)
+                if j!=0:
+                    ax_temp.set_ylabel(titles[which_par[j]])#.yaxis.set_visible(False)
+                    #ax_temp.set_ylabel("")#xaxis.set_visible(False)
                 if j!=nb_param-1:
                     ax_temp.set_xticklabels([])#xaxis.set_visible(False)
+                    ax_temp_up.set_xticklabels([])#xaxis.set_visible(False)
+                    ax_temp_up.set_yticklabels([])
+                    ax_temp.set_ylabel(titles[which_par[j]])#.yaxis.set_visible(False)
+                else:
+                    ax_temp_up.yaxis.set_ticklabels(ticklabs[i])#,position="right")
+                    #ax_temp_up.yaxis.tick_both()
+                    ax_temp_up.yaxis.tick_right()
+                    ax_temp.set_ylabel(titles[which_par[j]])
+                    #ax_temp_up.yaxis.set_label_position("right")
+                    #ax_temp_up.yaxis.set_label_position("right")
+                    #ax_temp_up.yaxis.set_ticks_position('both') 
                 #ax_temp.xaxis.set_ticks_position('bottom')
                 #ax_temp.locator_params(tight=True,nbins=5)
-                
+
             elif j==nb_param-1:
                 #ax_temp.xaxis.set_label_position('bottom')
+                ax_temp.set_ylabel("")#xaxis.set_visible(False)
+                if j!=0:
+                    ax_temp.set_ylabel("")
                 if i!=0:
                     ax_temp.set_yticklabels([])#yaxis.set_visible(False)
                 ax_temp_up.set_xticklabels([])#xaxis.set_visible(False)
-                ax_temp_up.set_yticklabels([])#yaxis.set_visible(False)
+                #ax_temp_up.set_yticklabels([])#yaxis.set_visible(False)
+                ax_temp_up.yaxis.set_ticklabels(ticklabs[i])#,position="right")
+                ax_temp_up.yaxis.set_label_position('right')
+                ax_temp_up.yaxis.tick_right()
                 #ax_temp.xaxis.set_major_locator(MaxNLocator(3))
                 #ax_temp.locator_params(tight=True,nbins=5)
             else:
+                if j!=0:
+                    ax_temp.set_ylabel("")#xaxis.set_visible(False)
+                ax_temp.set_ylabel("")#xaxis.set_visible(False)
                 ax_temp.set_yticklabels([])#yaxis.set_visible(False)   
                 ax_temp_up.set_yticklabels([])#yaxis.set_visible(False) 
                 ax_temp.set_xticklabels([])#xaxis.set_visible(False)
